@@ -1,18 +1,697 @@
 {
-  "id": "hMUrIGCkq3qmUrA2",
   "name": "JUTILABS · Reto SL · Flujo Completo",
-  "active": true,
-  "isArchived": false,
-  "versionId": "075f23d8-5b92-4f6e-8588-2478471449ff",
-  "activeVersionId": "075f23d8-5b92-4f6e-8588-2478471449ff",
-  "triggerCount": 2,
-  "createdAt": "2026-06-24T15:02:38.323Z",
-  "updatedAt": "2026-06-24T19:02:30.471Z",
-  "settings": {
-    "executionOrder": "v1",
-    "availableInMCP": true,
-    "binaryMode": "separate"
-  },
+  "nodes": [
+    {
+      "parameters": {
+        "path": "superlikers-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "50d964b7-1702-431f-9f11-1065b55e1bd5",
+      "name": "Webhook Verify (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        3808,
+        2432
+      ],
+      "webhookId": "16660098-bb18-4844-900a-93972eeb905a"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "31638b60-7756-4d21-af47-c0cc8182ef82",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "={{ $env.WHATSAPP_VERIFY_TOKEN }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0d904a5d-8acd-47aa-9cf9-6dcf514f0d71",
+      "name": "Token Correcto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4032,
+        2432
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('Webhook Verify (GET)').item.json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "9f755b5a-e5a8-4a0a-b0f6-1c62a6cb2007",
+      "name": "Responder Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4256,
+        2336
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "f5ac4334-ca12-40b6-8839-200d28f6f181",
+      "name": "Rechazar GET 403",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4256,
+        2528
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "superlikers-whatsapp",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "abcbaf6e-41be-4399-b72b-4213916f573a",
+      "name": "Webhook Recibe (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        3808,
+        2944
+      ],
+      "webhookId": "8ee1b78b-5f59-43f0-903d-3cb68d54911c"
+    },
+    {
+      "parameters": {
+        "jsCode": "// HMAC-SHA256 en JS puro (n8n task runner: sin require ni crypto global; solo Buffer).\nfunction sha256Bytes(bytes) {\n  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];\n  let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;\n  const msg = bytes.slice();\n  const origLenBits = msg.length * 8;\n  msg.push(0x80);\n  while (msg.length % 64 !== 56) msg.push(0x00);\n  const hi = Math.floor(origLenBits / 0x100000000);\n  const lo = origLenBits >>> 0;\n  msg.push((hi>>>24)&0xff,(hi>>>16)&0xff,(hi>>>8)&0xff,hi&0xff);\n  msg.push((lo>>>24)&0xff,(lo>>>16)&0xff,(lo>>>8)&0xff,lo&0xff);\n  function rotr(x,n){ return (x>>>n)|(x<<(32-n)); }\n  for (let i=0;i<msg.length;i+=64){\n    const w=new Array(64);\n    for(let t=0;t<16;t++){ w[t]=((msg[i+t*4]<<24)|(msg[i+t*4+1]<<16)|(msg[i+t*4+2]<<8)|(msg[i+t*4+3]))>>>0; }\n    for(let t=16;t<64;t++){\n      const s0=rotr(w[t-15],7)^rotr(w[t-15],18)^(w[t-15]>>>3);\n      const s1=rotr(w[t-2],17)^rotr(w[t-2],19)^(w[t-2]>>>10);\n      w[t]=(w[t-16]+s0+w[t-7]+s1)>>>0;\n    }\n    let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;\n    for(let t=0;t<64;t++){\n      const S1=rotr(e,6)^rotr(e,11)^rotr(e,25);\n      const ch=(e&f)^((~e)&g);\n      const temp1=(h+S1+ch+K[t]+w[t])>>>0;\n      const S0=rotr(a,2)^rotr(a,13)^rotr(a,22);\n      const maj=(a&b)^(a&c)^(b&c);\n      const temp2=(S0+maj)>>>0;\n      h=g;g=f;f=e;e=(d+temp1)>>>0;d=c;c=b;b=a;a=(temp1+temp2)>>>0;\n    }\n    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;h5=(h5+f)>>>0;h6=(h6+g)>>>0;h7=(h7+h)>>>0;\n  }\n  const hs=[h0,h1,h2,h3,h4,h5,h6,h7]; const out=[];\n  for(const x of hs){ out.push((x>>>24)&0xff,(x>>>16)&0xff,(x>>>8)&0xff,x&0xff); }\n  return out;\n}\nfunction hmacSha256Hex(keyStr, msgStr){\n  const block=64;\n  let key=Array.from(Buffer.from(keyStr,'utf8'));\n  if(key.length>block) key=sha256Bytes(key);\n  if(key.length<block) key=key.concat(new Array(block-key.length).fill(0));\n  const ipad=key.map(function(b){return b^0x36;});\n  const opad=key.map(function(b){return b^0x5c;});\n  const msg=Array.from(Buffer.from(msgStr,'utf8'));\n  const inner=sha256Bytes(ipad.concat(msg));\n  const outer=sha256Bytes(opad.concat(inner));\n  return outer.map(function(b){return b.toString(16).padStart(2,'0');}).join('');\n}\n\nconst item = $input.first();\n\n// 1) Body crudo\nlet raw = '';\nif (item.binary && item.binary.data && item.binary.data.data) {\n  raw = Buffer.from(item.binary.data.data, 'base64').toString('utf8');\n} else if (typeof item.json.body === 'string') {\n  raw = item.json.body;\n} else if (item.json.body) {\n  raw = JSON.stringify(item.json.body);\n}\n\nconst headers = item.json.headers || {};\nconst header_sig = headers['x-hub-signature-256'] || '';\nconst appSecret = $env.WHATSAPP_APP_SECRET || '';\n\n// 2) Firma\nconst computed_signature = hmacSha256Hex(appSecret, raw);\nconst valid = header_sig.length > 0 && ('sha256=' + computed_signature) === header_sig;\n\n// 3) Parsear payload\nlet payload = {};\ntry { payload = JSON.parse(raw); } catch(e) { payload = (typeof item.json.body === 'object' ? item.json.body : {}); }\nconst change = (((payload.entry || [])[0] || {}).changes || [])[0] || {};\nconst value = change.value || {};\nconst msg = (value.messages || [])[0] || null;\nconst is_message = !!msg;\nconst from = msg ? (msg.from || '') : '';\nconst phone_number_id = (value.metadata || {}).phone_number_id || '';\n\n// 4) Enriquecer: tipo, texto, interactive (boton/lista), imagen\nlet msg_type = msg ? (msg.type || '') : '';\nlet text = '';\nlet interactive_id = '';\nlet interactive_title = '';\nlet image_id = '';\nlet msg_text = '';\nif (msg) {\n  if (msg.type === 'text') { text = (msg.text || {}).body || ''; msg_text = text; }\n  else if (msg.type === 'interactive') {\n    const it = msg.interactive || {};\n    if (it.type === 'button_reply') { interactive_id = (it.button_reply || {}).id || ''; interactive_title = (it.button_reply || {}).title || ''; }\n    else if (it.type === 'list_reply') { interactive_id = (it.list_reply || {}).id || ''; interactive_title = (it.list_reply || {}).title || ''; }\n    msg_text = interactive_title || interactive_id;\n  }\n  else if (msg.type === 'image') { image_id = (msg.image || {}).id || ''; msg_text = '[imagen]'; }\n  else { msg_text = '[' + (msg.type || 'desconocido') + ']'; }\n}\n\nreturn [{ json: { valid, computed_signature, header_sig, is_message, from, phone_number_id, msg_type, text, interactive_id, interactive_title, image_id, msg_text, message_id: msg ? (msg.id || '') : '' } }];\n"
+      },
+      "id": "87bfec60-169a-418e-b8b1-1f26f6f1d5a7",
+      "name": "Validar y Parsear",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4032,
+        2944
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2660ea04-7c74-460e-a442-e914a10d85ef",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f94b90c5-7d42-4bde-bade-196eeb975415",
+      "name": "Firma Valida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4256,
+        2944
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cc4c9875-55e1-4fc4-816e-94b84efa748f",
+              "leftValue": "={{ $json.is_message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6bdf061f-8847-4638-bf71-61d46eea89f9",
+      "name": "Es Mensaje?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4480,
+        2848
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ef38c649-0d34-4fac-bd59-df18dd8e86b4",
+      "name": "Responder 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4704,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "d067fa3d-7e0e-41bb-9d52-6cc0fd20c6b8",
+      "name": "Ack 200 (estado)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4704,
+        3040
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "invalid signature",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "24d22509-7dfa-4027-a5d7-a53361e2da3a",
+      "name": "Rechazar Firma 403",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        4480,
+        3184
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyValue": "={{ ($('Validar y Parsear').item.json.from || '').replace(/^57/, '') }}",
+              "keyName": "={{ 'celular' }}"
+            }
+          ]
+        },
+        "tableId": "={{ 'conversation_state' }}"
+      },
+      "id": "f5440a32-f69f-4bf2-a7a9-23fc6d1f8a6c",
+      "name": "Cargar Estado",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4992,
+        2752
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mMeRwI2wAHHU1NtO",
+          "name": "Superlikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// CEREBRO DE LA MAQUINA DE ESTADOS. Solo logica de transiciones; el copy vive en Cargar Config.\nconst C = $('Cargar Config').item.json.copy;\nconst L = C.labels;\nconst p = $('Validar y Parsear').item.json;\nconst row = ($json && $json.celular) ? $json : {};\nconst from = p.from || '';\nconst celular10 = from.replace(/^57/, '');\nconst hadRow = !!(row && row.celular);\nconst paso = hadRow ? (row.paso || 'inicio') : 'inicio';\nconst text = (p.text || '').trim();\nconst btn = p.interactive_id || '';\nconst type = p.msg_type || '';\n\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nfunction buttons(body, arr){ return { messaging_product:'whatsapp', to: from, type:'interactive', interactive:{ type:'button', body:{ text: body }, action:{ buttons: arr.map(function(b){ return { type:'reply', reply:{ id:b.id, title:b.title } }; }) } } }; }\nfunction listMsg(body, rows){ return { messaging_product:'whatsapp', to: from, type:'interactive', interactive:{ type:'list', body:{ text: body }, action:{ button: L.boton_lista, sections:[ { title: L.seccion_opciones, rows: rows } ] } } }; }\n\nconst OCU = L.ocupacion.map(function(t,i){ return { id:'ocupacion_'+(i+1), title:t }; });\nconst CONF = [ {id:'confirmar_si', title:L.confirmar_si}, {id:'confirmar_no', title:L.confirmar_no} ];\n\nlet out = { action:'responder', wa_to: from, wa_payload: null, next_paso: paso, patch: {}, celular: from, celular10: celular10, had_row: hadRow, search_query: null, search_by: null, image_id: '' };\n\nswitch (paso) {\n  case 'esperando_correo': {\n    const email = text.toLowerCase();\n    const ok = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\n    if (!ok) { out.wa_payload = txt(C.correo_invalido); out.next_paso='esperando_correo'; out.patch={ paso:'esperando_correo' }; }\n    else { out.action='buscar'; out.search_by='email'; out.search_query={ email: email }; out.patch={ correo: email, distinct_id: email }; }\n    break;\n  }\n  case 'esperando_nombre': {\n    if (!text) { out.wa_payload = txt(C.pedir_nombre_vacio); out.next_paso='esperando_nombre'; out.patch={ paso:'esperando_nombre' }; }\n    else { out.wa_payload = txt(C.pedir_cedula); out.next_paso='esperando_cedula'; out.patch={ nombre: text, paso:'esperando_cedula' }; }\n    break;\n  }\n  case 'esperando_cedula': {\n    const ced = text.replace(/\\D/g,'');\n    if (ced.length < 5) { out.wa_payload = txt(C.cedula_invalida); out.next_paso='esperando_cedula'; out.patch={ paso:'esperando_cedula' }; }\n    else { out.wa_payload = listMsg(C.pedir_ocupacion, OCU); out.next_paso='esperando_ocupacion'; out.patch={ cedula: ced, paso:'esperando_ocupacion' }; }\n    break;\n  }\n  case 'esperando_ocupacion': {\n    if (['ocupacion_1','ocupacion_2','ocupacion_3','ocupacion_4'].indexOf(btn) === -1) { out.wa_payload = listMsg(C.ocupacion_invalida, OCU); out.next_paso='esperando_ocupacion'; out.patch={ paso:'esperando_ocupacion' }; }\n    else {\n      const resumen = C.resumen.replace('{nombre}', row.nombre||'').replace('{cedula}', row.cedula||'').replace('{correo}', row.correo||'').replace('{celular}', celular10);\n      out.wa_payload = buttons(resumen, CONF);\n      out.next_paso='esperando_confirmacion';\n      out.patch={ ocupacion: btn, tags: ['grupo_1'], paso:'esperando_confirmacion' };\n    }\n    break;\n  }\n  case 'esperando_confirmacion': {\n    if (btn === 'confirmar_si') { out.action='registrar'; out.patch={ paso:'registrando' }; }\n    else if (btn === 'confirmar_no') { out.wa_payload = txt(C.registro_cancelado); out.next_paso='esperando_nombre'; out.patch={ paso:'esperando_nombre' }; }\n    else { out.wa_payload = buttons(C.confirmar_pregunta, CONF); out.next_paso='esperando_confirmacion'; out.patch={ paso:'esperando_confirmacion' }; }\n    break;\n  }\n  case 'esperando_foto': {\n    if (type === 'image') { out.action='foto'; out.image_id = p.image_id || ''; out.patch={ paso:'procesando' }; }\n    else { out.wa_payload = txt(C.pedir_foto); out.next_paso='esperando_foto'; out.patch={ paso:'esperando_foto' }; }\n    break;\n  }\n  case 'esperando_csat': {\n    const n = parseInt(((text||btn)||'').replace(/\\D/g,''), 10);\n    if (n >= 1 && n <= 5) { out.wa_payload = txt(C.csat_gracias); out.next_paso='finalizado'; out.patch={ paso:'finalizado', datos: Object.assign({}, row.datos||{}, { csat: n }) }; }\n    else { out.wa_payload = txt(C.pedir_csat); out.next_paso='esperando_csat'; out.patch={ paso:'esperando_csat' }; }\n    break;\n  }\n  case 'finalizado': {\n    if (type === 'image') { out.action='foto'; out.image_id = p.image_id || ''; out.patch={ paso:'procesando' }; }\n    else { out.wa_payload = txt(C.otro_ticket); out.next_paso='esperando_foto'; out.patch={ paso:'esperando_foto' }; }\n    break;\n  }\n  case 'buscando':\n  case 'registrando':\n  case 'procesando': {\n    out.wa_payload = txt(C.procesando); out.next_paso = paso; out.patch = {};\n    break;\n  }\n  default: {\n    // PRIMER CONTACTO: identificar por celular (el from de WhatsApp ya lo trae, no se pide).\n    out.action='buscar'; out.search_by='cellphone'; out.search_query={ cellphone: celular10 };\n    out.patch={ paso:'buscando', celular: from, intentos: 0 };\n  }\n}\n\nreturn [{ json: out }];\n"
+      },
+      "id": "bae33dc8-c517-4a12-aafa-65e49f20f233",
+      "name": "Decidir",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5216,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "618ec0eb-942a-45bb-a30d-3ac631daf995",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "responder",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "responder"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "28547685-316d-4b78-8fe6-0b33f679103b",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "buscar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "buscar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "61ee2fab-89f6-4702-bb66-7b216f3cb8ab",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "registrar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "registrar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b11c3c16-15c8-416f-8aa0-989be4ad04a5",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "foto",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "foto"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "02a9844e-1c6b-4043-9037-69adcbbc492e",
+      "name": "Router Acción",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        5424,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// SL Buscar — replica EXACTA del metodo que dio 200 en la A2 (diagnostico 9N5BNAWdVJLlbgyX).\n// Usa helpers.httpRequest con qs anidado { query: { email|cellphone } } -> n8n lo serializa como query[campo]=...\nconst helpers = this.helpers;\nconst API_KEY = $env.API_KEY;\nconst BASE = 'https://api.superlikerslabs.com/v1';\nconst d = $('Decidir').item.json;\nconst sq = d.search_query || {};\nconst opt = {\n  method: 'GET',\n  url: BASE + '/participants/search',\n  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + API_KEY },\n  qs: { campaign: '3z', api_key: API_KEY, query: sq },\n  json: true, returnFullResponse: true, ignoreHttpStatusErrors: true, timeout: 20000\n};\nlet status = null, body = null, err = null;\ntry {\n  const res = await helpers.httpRequest(opt);\n  status = res.statusCode; body = res.body;\n} catch (e) {\n  const r = e.response || {};\n  status = e.statusCode || r.statusCode || null;\n  body = r.body || r.data || null; err = e.message;\n}\nreturn [{ json: { status, body, err, search_query: sq } }];\n"
+      },
+      "id": "7ba0e9d2-3bf4-4126-8560-1930aae8a6da",
+      "name": "SL Buscar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5648,
+        2624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesa la respuesta de SL Buscar (status + body). Copy desde Cargar Config.\nconst C = $('Cargar Config').item.json.copy;\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nconst search_by = d.search_by;\nconst sl = $('SL Buscar').item.json || {};\nconst status = sl.status;\nlet resp = sl.body || {};\nlet participant = resp;\nif (resp && resp.object) participant = resp.object;\nelse if (resp && resp.participant) participant = resp.participant;\nelse if (resp && resp.data) participant = Array.isArray(resp.data) ? (resp.data[0]||{}) : resp.data;\nelse if (resp && Array.isArray(resp.participants)) participant = resp.participants[0] || {};\nelse if (Array.isArray(resp)) participant = resp[0] || {};\nconst found = status === 200 && !!(participant && (participant.email || participant.distinct_id || participant.points !== undefined || participant['nombre-completo']));\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nlet out = { action:'responder', wa_to: from, wa_payload: null, next_paso:'', patch:{}, celular: d.celular, had_row: d.had_row };\nif (found) {\n  const correo = participant.email || participant.distinct_id || (d.search_query && d.search_query.email) || '';\n  out.wa_payload = txt(C.encontrado);\n  out.next_paso = 'esperando_foto';\n  out.patch = { paso:'esperando_foto', participante_existe: true, correo: correo, distinct_id: correo };\n} else if (search_by === 'cellphone') {\n  out.wa_payload = txt(C.saludo_pide_correo);\n  out.next_paso = 'esperando_correo';\n  out.patch = { paso:'esperando_correo', participante_existe: false };\n} else {\n  out.wa_payload = txt(C.no_encontrado_registrar);\n  out.next_paso = 'esperando_nombre';\n  out.patch = { paso:'esperando_nombre', participante_existe: false };\n}\nreturn [{ json: out }];\n"
+      },
+      "id": "f902158f-bc88-4781-b6be-bbfac486890c",
+      "name": "Procesar Búsqueda",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5872,
+        2624
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.superlikerslabs.com/v1/participants",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"api_key\": $env.API_KEY, \"campaign\": \"3z\", \"distinct_id\": $('Cargar Estado').item.json.correo, \"properties\": { \"nombre-completo\": $('Cargar Estado').item.json.nombre, \"cedula\": $('Cargar Estado').item.json.cedula, \"email\": $('Cargar Estado').item.json.correo, \"celular\": ($('Validar y Parsear').item.json.from || '').replace(/^57/, ''), \"ocupacion\": $('Cargar Estado').item.json.ocupacion, \"tags\": ($('Cargar Estado').item.json.tags || ['grupo_1']), \"pais\": \"CO\", \"password\": 'SL-' + Math.random().toString(36).slice(2,12) + 'x9', \"active\": true, \"verified_cellphone\": true, \"not_send_verify_registration\": true } } }}",
+        "options": {}
+      },
+      "id": "6e9ed113-96c9-4188-9e92-6c944498bae1",
+      "name": "SL Registrar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5648,
+        2800
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesa la respuesta de POST /participants. Idempotente. Copy desde Cargar Config.\nconst C = $('Cargar Config').item.json.copy;\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nlet resp = {};\ntry { resp = $('SL Registrar').item.json || {}; } catch (e) { resp = {}; }\nconst blob = JSON.stringify(resp).toLowerCase();\nconst created = blob.indexOf('exitosamente') !== -1 || blob.indexOf('creado') !== -1 || !!resp.distinct_id || resp.success === true;\nconst dup = blob.indexOf('ya esta siendo usado') !== -1 || (blob.indexOf('code_error') !== -1 && blob.indexOf('21') !== -1);\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nlet out = { action:'responder', wa_to: from, wa_payload:null, next_paso:'', patch:{}, celular: d.celular, had_row: d.had_row };\nif (created || dup) {\n  out.wa_payload = txt(C.registrado_ok);\n  out.next_paso = 'esperando_foto';\n  out.patch = { paso:'esperando_foto', participante_existe: true };\n} else {\n  out.wa_payload = txt(C.registro_error);\n  out.next_paso = 'esperando_nombre';\n  out.patch = { paso:'esperando_nombre' };\n}\nreturn [{ json: out }];\n"
+      },
+      "id": "1f65c3f0-c039-4d2b-8d48-60dff8f7177d",
+      "name": "Procesar Registro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5872,
+        2800
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// [SEAM ACTIVIDAD 6] media -> POST /photos -> lectura IA -> /retail/buy -> /entries/accept -> log transactions.\nconst C = $('Cargar Config').item.json.copy;\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nconst out = {\n  action:'responder', wa_to: from,\n  wa_payload: txt(C.foto_recibida),\n  next_paso:'esperando_csat',\n  patch:{ paso:'esperando_csat', id_actividad_foto: 'PENDIENTE_A6' },\n  celular: d.celular, had_row: d.had_row\n};\nreturn [{ json: out }];\n"
+      },
+      "id": "22ae1831-ced7-47e8-b2c6-96f8abb55999",
+      "name": "Foto (handoff A6)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5648,
+        2992
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "98e89fed-ca83-4f51-98fd-977b27026411",
+      "name": "Normalizar Salida",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        6112,
+        2752
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v21.0/' + $('Validar y Parsear').item.json.phone_number_id + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.wa_payload }}",
+        "options": {}
+      },
+      "id": "d83e5031-a5f0-4109-a07e-f0d8965bedf3",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6336,
+        2624
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HeBKKvsM1vy1xZ1A",
+          "name": "WhatsApp Cloud API - Reto SuperLikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mezcla estado previo + patch -> registro final de columnas para conversation_state.\nconst p = $('Validar y Parsear').item.json;\nconst from = p.from || '';\nlet row = {};\ntry { row = $('Cargar Estado').item.json || {}; } catch (e) { row = {}; }\nconst hadRow = !!(row && row.celular);\nconst cur = $json || {};\nconst patch = cur.patch || {};\nconst nextPaso = patch.paso || cur.next_paso || row.paso || 'inicio';\nfunction pick(k, dflt){ return (patch[k] !== undefined) ? patch[k] : ((row[k] !== undefined && row[k] !== null) ? row[k] : dflt); }\nconst rec = {\n  celular: (from || '').replace(/^57/, ''),\n  paso: nextPaso,\n  distinct_id: pick('distinct_id', null),\n  nombre: pick('nombre', null),\n  correo: pick('correo', null),\n  cedula: pick('cedula', null),\n  ocupacion: pick('ocupacion', null),\n  tags: pick('tags', null),\n  participante_existe: pick('participante_existe', null),\n  id_actividad_foto: pick('id_actividad_foto', null),\n  datos: pick('datos', {}),\n  intentos: pick('intentos', 0),\n  last_activity_at: new Date().toISOString(),\n  had_row: hadRow,\n  wa_payload: cur.wa_payload\n};\nreturn [{ json: rec }];\n"
+      },
+      "id": "6dc78351-91a6-4b5c-838f-6e7e0ea2eddb",
+      "name": "Preparar Estado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6336,
+        2880
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "467ab1e4-276e-4df2-8cac-dc2a52e96420",
+              "leftValue": "={{ $json.had_row }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "896261bd-98a7-40e3-8d15-e992c57d764c",
+      "name": "¿Existía?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6544,
+        2880
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyValue": "={{ $json.celular }}",
+              "keyName": "={{ 'celular' }}"
+            }
+          ]
+        },
+        "tableId": "={{ 'conversation_state' }}",
+        "dataToSend": "autoMapInputData",
+        "inputsToIgnore": "had_row,wa_payload"
+      },
+      "id": "d8edc7c0-f18b-4338-a86a-6f87ffb496d9",
+      "name": "Guardar Estado (update)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6768,
+        2784
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mMeRwI2wAHHU1NtO",
+          "name": "Superlikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "={{ 'conversation_state' }}",
+        "dataToSend": "autoMapInputData",
+        "inputsToIgnore": "had_row,wa_payload"
+      },
+      "id": "ab12984d-67f0-426e-bfd1-029ac0c0ae79",
+      "name": "Crear Estado (insert)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        6768,
+        2992
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mMeRwI2wAHHU1NtO",
+          "name": "Superlikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Verificacion (GET)\nMeta manda GET con hub.challenge + hub.verify_token.\nSe compara contra $env.WHATSAPP_VERIFY_TOKEN y se devuelve el challenge.",
+        "height": 260,
+        "width": 420,
+        "color": 4
+      },
+      "id": "0b9067c6-ede4-4978-ba78-f2bdbdea1817",
+      "name": "Nota GET",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3728,
+        2336
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Entrada + Firma (POST)\nValidar y Parsear: HMAC-SHA256 (X-Hub-Signature-256) + parseo de texto/boton/lista/imagen.\nAck 200 a Meta ANTES de procesar.",
+        "height": 300,
+        "width": 620,
+        "color": 5
+      },
+      "id": "2b7bdaa6-0781-4d71-b3a8-1cb00b9d0532",
+      "name": "Nota POST",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3728,
+        2704
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Maquina de estados (A5)\nCargar Estado (Supabase, working memory) -> Decidir (tabla de transiciones en un solo Code) -> Router por accion.\nResponder | Buscar (celular->email fallback) | Registrar | Foto.\nConverge en Normalizar -> Enviar WhatsApp + persistir estado (update/insert).",
+        "height": 260,
+        "width": 900,
+        "color": 7
+      },
+      "id": "64dfa46a-37e9-442f-a304-c85eff17b72d",
+      "name": "Nota Maquina",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4992,
+        2400
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## SEAM Actividad 6\n'Foto (handoff A6)' es placeholder.\nAqui ira: media -> POST /photos -> lectura IA (OpenAI Structured Outputs) -> /retail/buy -> /entries/accept -> log transactions -> confirmar puntos.",
+        "height": 220,
+        "width": 420,
+        "color": 3
+      },
+      "id": "1a83bee3-5abc-4387-af63-01259c2a34be",
+      "name": "Nota A6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5584,
+        3152
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// CONFIG / COPY centralizado de la maquina de estados.\n// FUENTE DE VERDAD: /prompts/copy.json en el repo. Este nodo es el reflejo desplegado.\n// Al cambiar un texto: editar el .json del repo y re-sincronizar este nodo.\nconst copy = {\n  \"saludo_pide_correo\": \"¡Hola! 👋 Soy el asistente de la campaña. Para empezar y validar tu registro, escríbeme tu *correo electrónico*.\",\n  \"correo_invalido\": \"Ese correo no parece válido. Escríbeme tu correo, por favor (ejemplo: nombre@correo.com).\",\n  \"encontrado\": \"¡Te encontramos! 🎉 Ya estás registrado en la campaña. Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.\",\n  \"no_encontrado_registrar\": \"No encontré una cuenta con ese correo, así que vamos a registrarte. 📝 Escríbeme tu *nombre completo*.\",\n  \"pedir_nombre_vacio\": \"Necesito tu nombre completo para continuar. Escríbelo, por favor.\",\n  \"pedir_cedula\": \"Gracias. Ahora escríbeme tu número de cédula (solo números).\",\n  \"cedula_invalida\": \"La cédula debe ser numérica. Escríbela de nuevo, por favor.\",\n  \"pedir_ocupacion\": \"¿Cuál es tu ocupación? Elige una opción.\",\n  \"ocupacion_invalida\": \"Elige tu ocupación de la lista, por favor.\",\n  \"resumen\": \"Confirmemos tus datos:\\n\\nNombre: {nombre}\\nCédula: {cedula}\\nCorreo: {correo}\\nCelular: {celular}\\n\\n¿Es correcto?\",\n  \"confirmar_pregunta\": \"¿Confirmas tus datos?\",\n  \"registro_cancelado\": \"Sin problema, empecemos de nuevo. Escríbeme tu nombre completo.\",\n  \"registrado_ok\": \"¡Listo, quedaste registrado! ✅ Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.\",\n  \"registro_error\": \"Tuve un problema registrándote. Verifica tus datos e inténtalo de nuevo: escríbeme tu *nombre completo*.\",\n  \"pedir_foto\": \"Por favor envíame la *foto* de tu factura para registrar tu compra y ganar puntos.\",\n  \"foto_recibida\": \"¡Recibí tu foto! 📸 Estoy procesando tu factura, un momento…\",\n  \"pedir_csat\": \"Calíficanos del 1 al 5, por favor (solo el número).\",\n  \"csat_gracias\": \"¡Gracias por tu calificación! 🙏 Cuando quieras registrar otro ticket, envíame la foto.\",\n  \"otro_ticket\": \"¿Quieres registrar otro ticket? Envíame la foto de la factura cuando quieras. 📸\",\n  \"procesando\": \"Dame un segundo, estoy procesando tu solicitud… ⏳\",\n  \"puntos_ok\": \"¡Listo! 🎉 Tu compra quedó registrada. Ganaste *{puntos} puntos*. ¿Quieres registrar otro ticket?\",\n  \"factura_ilegible\": \"No pude leer bien la factura. Por favor envíame una foto más clara, con buena iluminación y el número de factura visible.\",\n  \"factura_duplicada\": \"Esa factura ya fue registrada anteriormente. Si crees que es un error, escríbenos.\",\n  \"labels\": {\n    \"ocupacion\": [\n      \"Ocupación 1\",\n      \"Ocupación 2\",\n      \"Ocupación 3\",\n      \"Ocupación 4\"\n    ],\n    \"confirmar_si\": \"Sí, registrar\",\n    \"confirmar_no\": \"No, corregir\",\n    \"boton_lista\": \"Elegir\",\n    \"seccion_opciones\": \"Opciones\"\n  }\n};\nreturn [{ json: { copy } }];\n"
+      },
+      "id": "a1a1a1a1-cfg0-4000-9000-000000000001",
+      "name": "Cargar Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4844,
+        2602
+      ]
+    }
+  ],
+  "pinData": {},
   "connections": {
     "Webhook Verify (GET)": {
       "main": [
@@ -105,7 +784,7 @@
       "main": [
         [
           {
-            "node": "Cargar Estado",
+            "node": "Cargar Config",
             "type": "main",
             "index": 0
           }
@@ -265,1590 +944,32 @@
           }
         ]
       ]
+    },
+    "Cargar Config": {
+      "main": [
+        [
+          {
+            "node": "Cargar Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "nodes": [
-    {
-      "parameters": {
-        "path": "superlikers-whatsapp",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "309a2517-232b-4c6c-8163-f27c273042c0",
-      "name": "Webhook Verify (GET)",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        19600,
-        4672
-      ],
-      "webhookId": "16660098-bb18-4844-900a-93972eeb905a"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 1
-          },
-          "conditions": [
-            {
-              "id": "31638b60-7756-4d21-af47-c0cc8182ef82",
-              "leftValue": "={{ $json.query['hub.verify_token'] }}",
-              "rightValue": "={{ $env.WHATSAPP_VERIFY_TOKEN }}",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "37d48a5d-4ad1-4e25-9ca2-c8ff741c73b6",
-      "name": "Token Correcto?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        19824,
-        4672
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "={{ $('Webhook Verify (GET)').item.json.query['hub.challenge'] }}",
-        "options": {
-          "responseCode": 200
-        }
-      },
-      "id": "e68298c8-c122-4313-aa9a-8ac91bf06246",
-      "name": "Responder Challenge",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        20048,
-        4576
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "Forbidden",
-        "options": {
-          "responseCode": 403
-        }
-      },
-      "id": "771f3723-e936-4a64-b8c1-3e62ac99bb10",
-      "name": "Rechazar GET 403",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        20048,
-        4768
-      ]
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "superlikers-whatsapp",
-        "responseMode": "responseNode",
-        "options": {
-          "rawBody": true
-        }
-      },
-      "id": "847616aa-23f7-4c4b-aae9-6a7a630a9313",
-      "name": "Webhook Recibe (POST)",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        19600,
-        5184
-      ],
-      "webhookId": "8ee1b78b-5f59-43f0-903d-3cb68d54911c"
-    },
-    {
-      "parameters": {
-        "jsCode": "// HMAC-SHA256 en JS puro (n8n task runner: sin require ni crypto global; solo Buffer).\nfunction sha256Bytes(bytes) {\n  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];\n  let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;\n  const msg = bytes.slice();\n  const origLenBits = msg.length * 8;\n  msg.push(0x80);\n  while (msg.length % 64 !== 56) msg.push(0x00);\n  const hi = Math.floor(origLenBits / 0x100000000);\n  const lo = origLenBits >>> 0;\n  msg.push((hi>>>24)&0xff,(hi>>>16)&0xff,(hi>>>8)&0xff,hi&0xff);\n  msg.push((lo>>>24)&0xff,(lo>>>16)&0xff,(lo>>>8)&0xff,lo&0xff);\n  function rotr(x,n){ return (x>>>n)|(x<<(32-n)); }\n  for (let i=0;i<msg.length;i+=64){\n    const w=new Array(64);\n    for(let t=0;t<16;t++){ w[t]=((msg[i+t*4]<<24)|(msg[i+t*4+1]<<16)|(msg[i+t*4+2]<<8)|(msg[i+t*4+3]))>>>0; }\n    for(let t=16;t<64;t++){\n      const s0=rotr(w[t-15],7)^rotr(w[t-15],18)^(w[t-15]>>>3);\n      const s1=rotr(w[t-2],17)^rotr(w[t-2],19)^(w[t-2]>>>10);\n      w[t]=(w[t-16]+s0+w[t-7]+s1)>>>0;\n    }\n    let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;\n    for(let t=0;t<64;t++){\n      const S1=rotr(e,6)^rotr(e,11)^rotr(e,25);\n      const ch=(e&f)^((~e)&g);\n      const temp1=(h+S1+ch+K[t]+w[t])>>>0;\n      const S0=rotr(a,2)^rotr(a,13)^rotr(a,22);\n      const maj=(a&b)^(a&c)^(b&c);\n      const temp2=(S0+maj)>>>0;\n      h=g;g=f;f=e;e=(d+temp1)>>>0;d=c;c=b;b=a;a=(temp1+temp2)>>>0;\n    }\n    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;h5=(h5+f)>>>0;h6=(h6+g)>>>0;h7=(h7+h)>>>0;\n  }\n  const hs=[h0,h1,h2,h3,h4,h5,h6,h7]; const out=[];\n  for(const x of hs){ out.push((x>>>24)&0xff,(x>>>16)&0xff,(x>>>8)&0xff,x&0xff); }\n  return out;\n}\nfunction hmacSha256Hex(keyStr, msgStr){\n  const block=64;\n  let key=Array.from(Buffer.from(keyStr,'utf8'));\n  if(key.length>block) key=sha256Bytes(key);\n  if(key.length<block) key=key.concat(new Array(block-key.length).fill(0));\n  const ipad=key.map(function(b){return b^0x36;});\n  const opad=key.map(function(b){return b^0x5c;});\n  const msg=Array.from(Buffer.from(msgStr,'utf8'));\n  const inner=sha256Bytes(ipad.concat(msg));\n  const outer=sha256Bytes(opad.concat(inner));\n  return outer.map(function(b){return b.toString(16).padStart(2,'0');}).join('');\n}\n\nconst item = $input.first();\n\n// 1) Body crudo\nlet raw = '';\nif (item.binary && item.binary.data && item.binary.data.data) {\n  raw = Buffer.from(item.binary.data.data, 'base64').toString('utf8');\n} else if (typeof item.json.body === 'string') {\n  raw = item.json.body;\n} else if (item.json.body) {\n  raw = JSON.stringify(item.json.body);\n}\n\nconst headers = item.json.headers || {};\nconst header_sig = headers['x-hub-signature-256'] || '';\nconst appSecret = $env.WHATSAPP_APP_SECRET || '';\n\n// 2) Firma\nconst computed_signature = hmacSha256Hex(appSecret, raw);\nconst valid = header_sig.length > 0 && ('sha256=' + computed_signature) === header_sig;\n\n// 3) Parsear payload\nlet payload = {};\ntry { payload = JSON.parse(raw); } catch(e) { payload = (typeof item.json.body === 'object' ? item.json.body : {}); }\nconst change = (((payload.entry || [])[0] || {}).changes || [])[0] || {};\nconst value = change.value || {};\nconst msg = (value.messages || [])[0] || null;\nconst is_message = !!msg;\nconst from = msg ? (msg.from || '') : '';\nconst phone_number_id = (value.metadata || {}).phone_number_id || '';\n\n// 4) Enriquecer: tipo, texto, interactive (boton/lista), imagen\nlet msg_type = msg ? (msg.type || '') : '';\nlet text = '';\nlet interactive_id = '';\nlet interactive_title = '';\nlet image_id = '';\nlet msg_text = '';\nif (msg) {\n  if (msg.type === 'text') { text = (msg.text || {}).body || ''; msg_text = text; }\n  else if (msg.type === 'interactive') {\n    const it = msg.interactive || {};\n    if (it.type === 'button_reply') { interactive_id = (it.button_reply || {}).id || ''; interactive_title = (it.button_reply || {}).title || ''; }\n    else if (it.type === 'list_reply') { interactive_id = (it.list_reply || {}).id || ''; interactive_title = (it.list_reply || {}).title || ''; }\n    msg_text = interactive_title || interactive_id;\n  }\n  else if (msg.type === 'image') { image_id = (msg.image || {}).id || ''; msg_text = '[imagen]'; }\n  else { msg_text = '[' + (msg.type || 'desconocido') + ']'; }\n}\n\nreturn [{ json: { valid, computed_signature, header_sig, is_message, from, phone_number_id, msg_type, text, interactive_id, interactive_title, image_id, msg_text, message_id: msg ? (msg.id || '') : '' } }];\n"
-      },
-      "id": "e46d45e1-ce7b-4ab4-ac70-f47a4ce629af",
-      "name": "Validar y Parsear",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        19824,
-        5184
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "2660ea04-7c74-460e-a442-e914a10d85ef",
-              "leftValue": "={{ $json.valid }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "93c92f64-3849-4448-959f-a300a3fd2bd5",
-      "name": "Firma Valida?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        20048,
-        5184
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "cc4c9875-55e1-4fc4-816e-94b84efa748f",
-              "leftValue": "={{ $json.is_message }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "887a42de-9521-4bf1-aa55-afe9fa52c9a8",
-      "name": "Es Mensaje?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        20272,
-        5088
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "EVENT_RECEIVED",
-        "options": {
-          "responseCode": 200
-        }
-      },
-      "id": "bf491e73-484b-474b-9664-54c6ae1d4cfa",
-      "name": "Responder 200 OK",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        20496,
-        4992
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "EVENT_RECEIVED",
-        "options": {
-          "responseCode": 200
-        }
-      },
-      "id": "8d04df48-daa8-4a6c-8ffd-20fb5ec11b88",
-      "name": "Ack 200 (estado)",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        20496,
-        5280
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "text",
-        "responseBody": "invalid signature",
-        "options": {
-          "responseCode": 403
-        }
-      },
-      "id": "f99f7f86-b226-4ab7-8baf-c0ed8bdff42d",
-      "name": "Rechazar Firma 403",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
-      "position": [
-        20272,
-        5424
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "getAll",
-        "tableId": "={{ 'conversation_state' }}",
-        "limit": 1,
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "={{ 'celular' }}",
-              "condition": "eq",
-              "keyValue": "={{ ($('Validar y Parsear').item.json.from || '').replace(/^57/, '') }}"
-            }
-          ]
-        }
-      },
-      "id": "b0a417c5-227b-407d-87b2-7f0b990aac0d",
-      "name": "Cargar Estado",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        20784,
-        4992
-      ],
-      "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "jsCode": "// CEREBRO DE LA MAQUINA DE ESTADOS. Tabla de transiciones en un solo lugar (versionable).\n// Lee: mensaje parseado (Validar y Parsear) + estado actual (Cargar Estado).\n// Decide: action (responder|buscar|registrar|foto), next_paso, patch (campos a persistir) y wa_payload.\nconst p = $('Validar y Parsear').item.json;\nconst row = ($json && $json.celular) ? $json : {};\nconst from = p.from || '';\nconst celular10 = from.replace(/^57/, '');\nconst hadRow = !!(row && row.celular);\nconst paso = hadRow ? (row.paso || 'inicio') : 'inicio';\nconst text = (p.text || '').trim();\nconst btn = p.interactive_id || '';\nconst type = p.msg_type || '';\n\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nfunction buttons(body, arr){ return { messaging_product:'whatsapp', to: from, type:'interactive', interactive:{ type:'button', body:{ text: body }, action:{ buttons: arr.map(function(b){ return { type:'reply', reply:{ id:b.id, title:b.title } }; }) } } }; }\nfunction listMsg(body, rows){ return { messaging_product:'whatsapp', to: from, type:'interactive', interactive:{ type:'list', body:{ text: body }, action:{ button:'Elegir', sections:[ { title:'Opciones', rows: rows } ] } } }; }\n\nconst OCU = [ {id:'ocupacion_1',title:'Ocupación 1'},{id:'ocupacion_2',title:'Ocupación 2'},{id:'ocupacion_3',title:'Ocupación 3'},{id:'ocupacion_4',title:'Ocupación 4'} ];\n\nlet out = { action:'responder', wa_to: from, wa_payload: null, next_paso: paso, patch: {}, celular: from, celular10: celular10, had_row: hadRow, search_query: null, search_by: null, image_id: '' };\n\nswitch (paso) {\n  case 'esperando_correo': {\n    const email = text.toLowerCase();\n    const ok = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\n    if (!ok) { out.wa_payload = txt('Ese correo no parece válido. Escríbeme tu correo, por favor (ejemplo: nombre@correo.com).'); out.next_paso='esperando_correo'; out.patch={ paso:'esperando_correo' }; }\n    else { out.action='buscar'; out.search_by='email'; out.search_query={ email: email }; out.patch={ correo: email, distinct_id: email }; }\n    break;\n  }\n  case 'esperando_nombre': {\n    if (!text) { out.wa_payload = txt('Necesito tu nombre completo para continuar. Escríbelo, por favor.'); out.next_paso='esperando_nombre'; out.patch={ paso:'esperando_nombre' }; }\n    else { out.wa_payload = txt('Gracias. Ahora escríbeme tu número de cédula (solo números).'); out.next_paso='esperando_cedula'; out.patch={ nombre: text, paso:'esperando_cedula' }; }\n    break;\n  }\n  case 'esperando_cedula': {\n    const ced = text.replace(/\\D/g,'');\n    if (ced.length < 5) { out.wa_payload = txt('La cédula debe ser numérica. Escríbela de nuevo, por favor.'); out.next_paso='esperando_cedula'; out.patch={ paso:'esperando_cedula' }; }\n    else { out.wa_payload = listMsg('¿Cuál es tu ocupación? Elige una opción.', OCU); out.next_paso='esperando_ocupacion'; out.patch={ cedula: ced, paso:'esperando_ocupacion' }; }\n    break;\n  }\n  case 'esperando_ocupacion': {\n    if (['ocupacion_1','ocupacion_2','ocupacion_3','ocupacion_4'].indexOf(btn) === -1) { out.wa_payload = listMsg('Elige tu ocupación de la lista, por favor.', OCU); out.next_paso='esperando_ocupacion'; out.patch={ paso:'esperando_ocupacion' }; }\n    else {\n      const resumen = 'Confirmemos tus datos:\\n\\n' + 'Nombre: ' + (row.nombre||'') + '\\n' + 'Cédula: ' + (row.cedula||'') + '\\n' + 'Correo: ' + (row.correo||'') + '\\n' + 'Celular: ' + celular10 + '\\n\\n¿Es correcto?';\n      out.wa_payload = buttons(resumen, [ {id:'confirmar_si',title:'Sí, registrar'}, {id:'confirmar_no',title:'No, corregir'} ]);\n      out.next_paso='esperando_confirmacion';\n      out.patch={ ocupacion: btn, tags: ['grupo_1'], paso:'esperando_confirmacion' };\n    }\n    break;\n  }\n  case 'esperando_confirmacion': {\n    if (btn === 'confirmar_si') { out.action='registrar'; out.patch={ paso:'registrando' }; }\n    else if (btn === 'confirmar_no') { out.wa_payload = txt('Sin problema, empecemos de nuevo. Escríbeme tu nombre completo.'); out.next_paso='esperando_nombre'; out.patch={ paso:'esperando_nombre' }; }\n    else { out.wa_payload = buttons('¿Confirmas tus datos?', [ {id:'confirmar_si',title:'Sí, registrar'}, {id:'confirmar_no',title:'No, corregir'} ]); out.next_paso='esperando_confirmacion'; out.patch={ paso:'esperando_confirmacion' }; }\n    break;\n  }\n  case 'esperando_foto': {\n    if (type === 'image') { out.action='foto'; out.image_id = p.image_id || ''; out.patch={ paso:'procesando' }; }\n    else { out.wa_payload = txt('Por favor envíame la *foto* de tu factura para registrar tu compra y ganar puntos.'); out.next_paso='esperando_foto'; out.patch={ paso:'esperando_foto' }; }\n    break;\n  }\n  case 'esperando_csat': {\n    const n = parseInt(((text||btn)||'').replace(/\\D/g,''), 10);\n    if (n >= 1 && n <= 5) { out.wa_payload = txt('¡Gracias por tu calificación! 🙌 Cuando quieras registrar otro ticket, envíame la foto.'); out.next_paso='finalizado'; out.patch={ paso:'finalizado', datos: Object.assign({}, row.datos||{}, { csat: n }) }; }\n    else { out.wa_payload = txt('Califícanos del 1 al 5, por favor (solo el número).'); out.next_paso='esperando_csat'; out.patch={ paso:'esperando_csat' }; }\n    break;\n  }\n  case 'finalizado': {\n    if (type === 'image') { out.action='foto'; out.image_id = p.image_id || ''; out.patch={ paso:'procesando' }; }\n    else { out.wa_payload = txt('¿Quieres registrar otro ticket? Envíame la foto de la factura cuando quieras. 📸'); out.next_paso='esperando_foto'; out.patch={ paso:'esperando_foto' }; }\n    break;\n  }\n  case 'buscando':\n  case 'registrando':\n  case 'procesando': {\n    out.wa_payload = txt('Dame un segundo, estoy procesando tu solicitud… 🙏'); out.next_paso = paso; out.patch = {};\n    break;\n  }\n  default: {\n    // PRIMER CONTACTO: identificar por celular (honra el brief). El from de WhatsApp ya trae el numero.\n    // Si el search por cellphone no resuelve (labs), Procesar Busqueda cae a pedir el correo.\n    out.action='buscar'; out.search_by='cellphone'; out.search_query={ cellphone: celular10 };\n    out.patch={ paso:'buscando', celular: from, intentos: 0 };\n  }\n}\n\n\n// Construir URL con bracket notation (confirmado en A2: query[email]=...)\nif (out.action === 'buscar' && out.search_query) {\n  const BASE = 'https://api.superlikerslabs.com/v1';\n  const apiKey = encodeURIComponent($env.API_KEY || '');\n  let qs = 'api_key=' + apiKey + '&campaign=3z';\n  const sq = out.search_query;\n  const keys = Object.keys(sq);\n  for (let i=0; i<keys.length; i++) {\n    qs += '&query[' + keys[i] + ']=' + encodeURIComponent(sq[keys[i]]);\n  }\n  out.search_url = BASE + '/participants/search?' + qs;\n}\n\nreturn [{ json: out }];\n"
-      },
-      "id": "856f915d-e5b8-4b3e-bd2f-f9f299204ac9",
-      "name": "Decidir",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        21008,
-        4992
-      ]
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "618ec0eb-942a-45bb-a30d-3ac631daf995",
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "responder",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "responder"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "28547685-316d-4b78-8fe6-0b33f679103b",
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "buscar",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "buscar"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "61ee2fab-89f6-4702-bb66-7b216f3cb8ab",
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "registrar",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "registrar"
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "loose",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "b11c3c16-15c8-416f-8aa0-989be4ad04a5",
-                    "leftValue": "={{ $json.action }}",
-                    "rightValue": "foto",
-                    "operator": {
-                      "type": "string",
-                      "operation": "equals"
-                    }
-                  }
-                ],
-                "combinator": "and"
-              },
-              "renameOutput": true,
-              "outputKey": "foto"
-            }
-          ]
-        },
-        "options": {
-          "fallbackOutput": "none"
-        }
-      },
-      "id": "fe87d9c8-a4cf-4823-ba66-2ee39ffa2707",
-      "name": "Router Acción",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.4,
-      "position": [
-        21216,
-        4992
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// SL Buscar — replica EXACTA del metodo que dio 200 en la A2 (diagnostico 9N5BNAWdVJLlbgyX).\n// Usa helpers.httpRequest con qs anidado { query: { email|cellphone } } -> n8n lo serializa como query[campo]=...\nconst helpers = this.helpers;\nconst API_KEY = $env.API_KEY;\nconst BASE = 'https://api.superlikerslabs.com/v1';\nconst d = $('Decidir').item.json;\nconst sq = d.search_query || {};\nconst opt = {\n  method: 'GET',\n  url: BASE + '/participants/search',\n  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + API_KEY },\n  qs: { campaign: '3z', api_key: API_KEY, query: sq },\n  json: true, returnFullResponse: true, ignoreHttpStatusErrors: true, timeout: 20000\n};\nlet status = null, body = null, err = null;\ntry {\n  const res = await helpers.httpRequest(opt);\n  status = res.statusCode; body = res.body;\n} catch (e) {\n  const r = e.response || {};\n  status = e.statusCode || r.statusCode || null;\n  body = r.body || r.data || null; err = e.message;\n}\nreturn [{ json: { status, body, err, search_query: sq } }];\n"
-      },
-      "id": "3d0bad01-3d65-4e64-8bd4-c74f695a5462",
-      "name": "SL Buscar",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        21440,
-        4864
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Procesa la respuesta de SL Buscar (status + body).\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nconst search_by = d.search_by;\nconst sl = $('SL Buscar').item.json || {};\nconst status = sl.status;\nlet resp = sl.body || {};\nlet participant = resp;\nif (resp && resp.object) participant = resp.object;\nelse if (resp && resp.participant) participant = resp.participant;\nelse if (resp && resp.data) participant = Array.isArray(resp.data) ? (resp.data[0]||{}) : resp.data;\nelse if (resp && Array.isArray(resp.participants)) participant = resp.participants[0] || {};\nelse if (Array.isArray(resp)) participant = resp[0] || {};\nconst found = status === 200 && !!(participant && (participant.email || participant.distinct_id || participant.points !== undefined || participant['nombre-completo']));\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nlet out = { action:'responder', wa_to: from, wa_payload: null, next_paso:'', patch:{}, celular: d.celular, had_row: d.had_row };\nif (found) {\n  const correo = participant.email || participant.distinct_id || (d.search_query && d.search_query.email) || '';\n  out.wa_payload = txt('¡Te encontramos! 🎉 Ya estás registrado en la campaña. Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.');\n  out.next_paso = 'esperando_foto';\n  out.patch = { paso:'esperando_foto', participante_existe: true, correo: correo, distinct_id: correo };\n} else if (search_by === 'cellphone') {\n  out.wa_payload = txt('¡Hola! 👋 Soy el asistente de la campaña. Para empezar y validar tu registro, escríbeme tu *correo electrónico*.');\n  out.next_paso = 'esperando_correo';\n  out.patch = { paso:'esperando_correo', participante_existe: false };\n} else {\n  out.wa_payload = txt('No encontré una cuenta con ese correo, así que vamos a registrarte. 📝 Escríbeme tu *nombre completo*.');\n  out.next_paso = 'esperando_nombre';\n  out.patch = { paso:'esperando_nombre', participante_existe: false };\n}\nreturn [{ json: out }];\n"
-      },
-      "id": "552cdde2-b645-4e03-910b-9037084262b8",
-      "name": "Procesar Búsqueda",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        21664,
-        4864
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.superlikerslabs.com/v1/participants",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.API_KEY }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ { \"api_key\": $env.API_KEY, \"campaign\": \"3z\", \"distinct_id\": $('Cargar Estado').item.json.correo, \"properties\": { \"nombre-completo\": $('Cargar Estado').item.json.nombre, \"cedula\": $('Cargar Estado').item.json.cedula, \"email\": $('Cargar Estado').item.json.correo, \"celular\": ($('Validar y Parsear').item.json.from || '').replace(/^57/, ''), \"ocupacion\": $('Cargar Estado').item.json.ocupacion, \"tags\": ($('Cargar Estado').item.json.tags || ['grupo_1']), \"pais\": \"CO\", \"password\": 'SL-' + Math.random().toString(36).slice(2,12) + 'x9', \"active\": true, \"verified_cellphone\": true, \"not_send_verify_registration\": true } } }}",
-        "options": {}
-      },
-      "id": "3b2b6c4e-4e3c-435d-af8b-b7cde85f2650",
-      "name": "SL Registrar",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        21440,
-        5040
-      ],
-      "alwaysOutputData": true,
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Procesa la respuesta de POST /participants. Idempotente: duplicado se trata como exito.\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nlet resp = {};\ntry { resp = $('SL Registrar').item.json || {}; } catch (e) { resp = {}; }\nconst blob = JSON.stringify(resp).toLowerCase();\nconst created = blob.indexOf('exitosamente') !== -1 || blob.indexOf('creado') !== -1 || !!resp.distinct_id || resp.success === true;\nconst dup = blob.indexOf('ya esta siendo usado') !== -1 || (blob.indexOf('code_error') !== -1 && blob.indexOf('21') !== -1);\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nlet out = { action:'responder', wa_to: from, wa_payload:null, next_paso:'', patch:{}, celular: d.celular, had_row: d.had_row };\nif (created || dup) {\n  out.wa_payload = txt('¡Listo, quedaste registrado! ✅ Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.');\n  out.next_paso = 'esperando_foto';\n  out.patch = { paso:'esperando_foto', participante_existe: true };\n} else {\n  out.wa_payload = txt('Tuve un problema registrándote. Verifica tus datos e inténtalo de nuevo: escríbeme tu *nombre completo*.');\n  out.next_paso = 'esperando_nombre';\n  out.patch = { paso:'esperando_nombre' };\n}\nreturn [{ json: out }];\n"
-      },
-      "id": "4b76801a-82be-4c5d-aa80-181d58ac5fb0",
-      "name": "Procesar Registro",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        21664,
-        5040
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// [SEAM ACTIVIDAD 6] Aqui va la cadena real:\n//   descargar media de WhatsApp (GET /{media_id}) -> POST /photos (guardar id_actividad_foto)\n//   -> leer factura con OpenAI Structured Outputs ({legible, ref, products[]})\n//   -> chequear idempotencia ref en transactions -> POST /retail/buy -> POST /entries/accept\n//   -> log en transactions -> confirmar puntos al usuario.\n// Por ahora: acuse de recibo + handoff a CSAT para que el loop conversacional sea demostrable end-to-end.\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nconst out = {\n  action:'responder', wa_to: from,\n  wa_payload: txt('¡Recibí tu foto! 📸 Estoy procesando tu factura. (La lectura con IA + registro de venta + aceptación se completan en la Actividad 6.)'),\n  next_paso:'esperando_csat',\n  patch:{ paso:'esperando_csat', id_actividad_foto: 'PENDIENTE_A6' },\n  celular: d.celular, had_row: d.had_row\n};\nreturn [{ json: out }];\n"
-      },
-      "id": "7063d51c-7eb3-438c-95ba-056ffde2f19b",
-      "name": "Foto (handoff A6)",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        21440,
-        5232
-      ]
-    },
-    {
-      "parameters": {},
-      "id": "21d3de0e-b5fb-42fa-a9db-0986a3748852",
-      "name": "Normalizar Salida",
-      "type": "n8n-nodes-base.noOp",
-      "typeVersion": 1,
-      "position": [
-        21904,
-        4992
-      ]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ 'https://graph.facebook.com/v21.0/' + $('Validar y Parsear').item.json.phone_number_id + '/messages' }}",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ $json.wa_payload }}",
-        "options": {}
-      },
-      "id": "45665103-5400-4445-8b71-3fa02bf3e158",
-      "name": "Enviar WhatsApp",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        22128,
-        4864
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Mezcla estado previo + patch -> registro final de columnas para conversation_state.\nconst p = $('Validar y Parsear').item.json;\nconst from = p.from || '';\nlet row = {};\ntry { row = $('Cargar Estado').item.json || {}; } catch (e) { row = {}; }\nconst hadRow = !!(row && row.celular);\nconst cur = $json || {};\nconst patch = cur.patch || {};\nconst nextPaso = patch.paso || cur.next_paso || row.paso || 'inicio';\nfunction pick(k, dflt){ return (patch[k] !== undefined) ? patch[k] : ((row[k] !== undefined && row[k] !== null) ? row[k] : dflt); }\nconst rec = {\n  celular: (from || '').replace(/^57/, ''),\n  paso: nextPaso,\n  distinct_id: pick('distinct_id', null),\n  nombre: pick('nombre', null),\n  correo: pick('correo', null),\n  cedula: pick('cedula', null),\n  ocupacion: pick('ocupacion', null),\n  tags: pick('tags', null),\n  participante_existe: pick('participante_existe', null),\n  id_actividad_foto: pick('id_actividad_foto', null),\n  datos: pick('datos', {}),\n  intentos: pick('intentos', 0),\n  last_activity_at: new Date().toISOString(),\n  had_row: hadRow,\n  wa_payload: cur.wa_payload\n};\nreturn [{ json: rec }];\n"
-      },
-      "id": "e724a7fa-b9bc-4f2a-91e0-3e25937ccc7d",
-      "name": "Preparar Estado",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        22128,
-        5120
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "467ab1e4-276e-4df2-8cac-dc2a52e96420",
-              "leftValue": "={{ $json.had_row }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "ba2fdaba-d1d0-41c9-99be-6defdccdfde7",
-      "name": "¿Existía?",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        22336,
-        5120
-      ]
-    },
-    {
-      "parameters": {
-        "operation": "update",
-        "tableId": "={{ 'conversation_state' }}",
-        "filters": {
-          "conditions": [
-            {
-              "keyName": "={{ 'celular' }}",
-              "condition": "eq",
-              "keyValue": "={{ $json.celular }}"
-            }
-          ]
-        },
-        "dataToSend": "autoMapInputData",
-        "inputsToIgnore": "had_row,wa_payload"
-      },
-      "id": "430d0974-9de8-4768-9fd2-4f8974b5aaca",
-      "name": "Guardar Estado (update)",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        22560,
-        5024
-      ]
-    },
-    {
-      "parameters": {
-        "tableId": "={{ 'conversation_state' }}",
-        "dataToSend": "autoMapInputData",
-        "inputsToIgnore": "had_row,wa_payload"
-      },
-      "id": "4d8cff92-874e-4218-8cc6-e087d42fb5ab",
-      "name": "Crear Estado (insert)",
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        22560,
-        5232
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## Verificacion (GET)\nMeta manda GET con hub.challenge + hub.verify_token.\nSe compara contra $env.WHATSAPP_VERIFY_TOKEN y se devuelve el challenge.",
-        "height": 260,
-        "width": 420,
-        "color": 4
-      },
-      "id": "4d88531b-ea33-42d5-8120-ebcc3eea407d",
-      "name": "Nota GET",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        19520,
-        4576
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## Entrada + Firma (POST)\nValidar y Parsear: HMAC-SHA256 (X-Hub-Signature-256) + parseo de texto/boton/lista/imagen.\nAck 200 a Meta ANTES de procesar.",
-        "height": 300,
-        "width": 620,
-        "color": 5
-      },
-      "id": "ff08d3b0-e5ee-4eb6-98ff-3da242a42fdc",
-      "name": "Nota POST",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        19520,
-        4944
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## Maquina de estados (A5)\nCargar Estado (Supabase, working memory) -> Decidir (tabla de transiciones en un solo Code) -> Router por accion.\nResponder | Buscar (celular->email fallback) | Registrar | Foto.\nConverge en Normalizar -> Enviar WhatsApp + persistir estado (update/insert).",
-        "height": 260,
-        "width": 900,
-        "color": 7
-      },
-      "id": "949733ad-5dce-4d2d-be61-684e2712da05",
-      "name": "Nota Maquina",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        20784,
-        4640
-      ]
-    },
-    {
-      "parameters": {
-        "content": "## SEAM Actividad 6\n'Foto (handoff A6)' es placeholder.\nAqui ira: media -> POST /photos -> lectura IA (OpenAI Structured Outputs) -> /retail/buy -> /entries/accept -> log transactions -> confirmar puntos.",
-        "height": 220,
-        "width": 420,
-        "color": 3
-      },
-      "id": "7079400a-9aec-473a-abad-ff7ac29efe4f",
-      "name": "Nota A6",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        21376,
-        5392
-      ]
-    }
-  ],
-  "activeVersion": {
-    "nodes": [
-      {
-        "parameters": {
-          "path": "superlikers-whatsapp",
-          "responseMode": "responseNode",
-          "options": {}
-        },
-        "id": "309a2517-232b-4c6c-8163-f27c273042c0",
-        "name": "Webhook Verify (GET)",
-        "type": "n8n-nodes-base.webhook",
-        "typeVersion": 2.1,
-        "position": [
-          19600,
-          4672
-        ],
-        "webhookId": "16660098-bb18-4844-900a-93972eeb905a"
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "strict",
-              "version": 1
-            },
-            "conditions": [
-              {
-                "id": "31638b60-7756-4d21-af47-c0cc8182ef82",
-                "leftValue": "={{ $json.query['hub.verify_token'] }}",
-                "rightValue": "={{ $env.WHATSAPP_VERIFY_TOKEN }}",
-                "operator": {
-                  "type": "string",
-                  "operation": "equals"
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "37d48a5d-4ad1-4e25-9ca2-c8ff741c73b6",
-        "name": "Token Correcto?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          19824,
-          4672
-        ]
-      },
-      {
-        "parameters": {
-          "respondWith": "text",
-          "responseBody": "={{ $('Webhook Verify (GET)').item.json.query['hub.challenge'] }}",
-          "options": {
-            "responseCode": 200
-          }
-        },
-        "id": "e68298c8-c122-4313-aa9a-8ac91bf06246",
-        "name": "Responder Challenge",
-        "type": "n8n-nodes-base.respondToWebhook",
-        "typeVersion": 1.1,
-        "position": [
-          20048,
-          4576
-        ]
-      },
-      {
-        "parameters": {
-          "respondWith": "text",
-          "responseBody": "Forbidden",
-          "options": {
-            "responseCode": 403
-          }
-        },
-        "id": "771f3723-e936-4a64-b8c1-3e62ac99bb10",
-        "name": "Rechazar GET 403",
-        "type": "n8n-nodes-base.respondToWebhook",
-        "typeVersion": 1.1,
-        "position": [
-          20048,
-          4768
-        ]
-      },
-      {
-        "parameters": {
-          "httpMethod": "POST",
-          "path": "superlikers-whatsapp",
-          "responseMode": "responseNode",
-          "options": {
-            "rawBody": true
-          }
-        },
-        "id": "847616aa-23f7-4c4b-aae9-6a7a630a9313",
-        "name": "Webhook Recibe (POST)",
-        "type": "n8n-nodes-base.webhook",
-        "typeVersion": 2.1,
-        "position": [
-          19600,
-          5184
-        ],
-        "webhookId": "8ee1b78b-5f59-43f0-903d-3cb68d54911c"
-      },
-      {
-        "parameters": {
-          "jsCode": "// HMAC-SHA256 en JS puro (n8n task runner: sin require ni crypto global; solo Buffer).\nfunction sha256Bytes(bytes) {\n  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];\n  let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;\n  const msg = bytes.slice();\n  const origLenBits = msg.length * 8;\n  msg.push(0x80);\n  while (msg.length % 64 !== 56) msg.push(0x00);\n  const hi = Math.floor(origLenBits / 0x100000000);\n  const lo = origLenBits >>> 0;\n  msg.push((hi>>>24)&0xff,(hi>>>16)&0xff,(hi>>>8)&0xff,hi&0xff);\n  msg.push((lo>>>24)&0xff,(lo>>>16)&0xff,(lo>>>8)&0xff,lo&0xff);\n  function rotr(x,n){ return (x>>>n)|(x<<(32-n)); }\n  for (let i=0;i<msg.length;i+=64){\n    const w=new Array(64);\n    for(let t=0;t<16;t++){ w[t]=((msg[i+t*4]<<24)|(msg[i+t*4+1]<<16)|(msg[i+t*4+2]<<8)|(msg[i+t*4+3]))>>>0; }\n    for(let t=16;t<64;t++){\n      const s0=rotr(w[t-15],7)^rotr(w[t-15],18)^(w[t-15]>>>3);\n      const s1=rotr(w[t-2],17)^rotr(w[t-2],19)^(w[t-2]>>>10);\n      w[t]=(w[t-16]+s0+w[t-7]+s1)>>>0;\n    }\n    let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;\n    for(let t=0;t<64;t++){\n      const S1=rotr(e,6)^rotr(e,11)^rotr(e,25);\n      const ch=(e&f)^((~e)&g);\n      const temp1=(h+S1+ch+K[t]+w[t])>>>0;\n      const S0=rotr(a,2)^rotr(a,13)^rotr(a,22);\n      const maj=(a&b)^(a&c)^(b&c);\n      const temp2=(S0+maj)>>>0;\n      h=g;g=f;f=e;e=(d+temp1)>>>0;d=c;c=b;b=a;a=(temp1+temp2)>>>0;\n    }\n    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;h5=(h5+f)>>>0;h6=(h6+g)>>>0;h7=(h7+h)>>>0;\n  }\n  const hs=[h0,h1,h2,h3,h4,h5,h6,h7]; const out=[];\n  for(const x of hs){ out.push((x>>>24)&0xff,(x>>>16)&0xff,(x>>>8)&0xff,x&0xff); }\n  return out;\n}\nfunction hmacSha256Hex(keyStr, msgStr){\n  const block=64;\n  let key=Array.from(Buffer.from(keyStr,'utf8'));\n  if(key.length>block) key=sha256Bytes(key);\n  if(key.length<block) key=key.concat(new Array(block-key.length).fill(0));\n  const ipad=key.map(function(b){return b^0x36;});\n  const opad=key.map(function(b){return b^0x5c;});\n  const msg=Array.from(Buffer.from(msgStr,'utf8'));\n  const inner=sha256Bytes(ipad.concat(msg));\n  const outer=sha256Bytes(opad.concat(inner));\n  return outer.map(function(b){return b.toString(16).padStart(2,'0');}).join('');\n}\n\nconst item = $input.first();\n\n// 1) Body crudo\nlet raw = '';\nif (item.binary && item.binary.data && item.binary.data.data) {\n  raw = Buffer.from(item.binary.data.data, 'base64').toString('utf8');\n} else if (typeof item.json.body === 'string') {\n  raw = item.json.body;\n} else if (item.json.body) {\n  raw = JSON.stringify(item.json.body);\n}\n\nconst headers = item.json.headers || {};\nconst header_sig = headers['x-hub-signature-256'] || '';\nconst appSecret = $env.WHATSAPP_APP_SECRET || '';\n\n// 2) Firma\nconst computed_signature = hmacSha256Hex(appSecret, raw);\nconst valid = header_sig.length > 0 && ('sha256=' + computed_signature) === header_sig;\n\n// 3) Parsear payload\nlet payload = {};\ntry { payload = JSON.parse(raw); } catch(e) { payload = (typeof item.json.body === 'object' ? item.json.body : {}); }\nconst change = (((payload.entry || [])[0] || {}).changes || [])[0] || {};\nconst value = change.value || {};\nconst msg = (value.messages || [])[0] || null;\nconst is_message = !!msg;\nconst from = msg ? (msg.from || '') : '';\nconst phone_number_id = (value.metadata || {}).phone_number_id || '';\n\n// 4) Enriquecer: tipo, texto, interactive (boton/lista), imagen\nlet msg_type = msg ? (msg.type || '') : '';\nlet text = '';\nlet interactive_id = '';\nlet interactive_title = '';\nlet image_id = '';\nlet msg_text = '';\nif (msg) {\n  if (msg.type === 'text') { text = (msg.text || {}).body || ''; msg_text = text; }\n  else if (msg.type === 'interactive') {\n    const it = msg.interactive || {};\n    if (it.type === 'button_reply') { interactive_id = (it.button_reply || {}).id || ''; interactive_title = (it.button_reply || {}).title || ''; }\n    else if (it.type === 'list_reply') { interactive_id = (it.list_reply || {}).id || ''; interactive_title = (it.list_reply || {}).title || ''; }\n    msg_text = interactive_title || interactive_id;\n  }\n  else if (msg.type === 'image') { image_id = (msg.image || {}).id || ''; msg_text = '[imagen]'; }\n  else { msg_text = '[' + (msg.type || 'desconocido') + ']'; }\n}\n\nreturn [{ json: { valid, computed_signature, header_sig, is_message, from, phone_number_id, msg_type, text, interactive_id, interactive_title, image_id, msg_text, message_id: msg ? (msg.id || '') : '' } }];\n"
-        },
-        "id": "e46d45e1-ce7b-4ab4-ac70-f47a4ce629af",
-        "name": "Validar y Parsear",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          19824,
-          5184
-        ]
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "loose",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "2660ea04-7c74-460e-a442-e914a10d85ef",
-                "leftValue": "={{ $json.valid }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true",
-                  "singleValue": true
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "93c92f64-3849-4448-959f-a300a3fd2bd5",
-        "name": "Firma Valida?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          20048,
-          5184
-        ]
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "loose",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "cc4c9875-55e1-4fc4-816e-94b84efa748f",
-                "leftValue": "={{ $json.is_message }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true",
-                  "singleValue": true
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "887a42de-9521-4bf1-aa55-afe9fa52c9a8",
-        "name": "Es Mensaje?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          20272,
-          5088
-        ]
-      },
-      {
-        "parameters": {
-          "respondWith": "text",
-          "responseBody": "EVENT_RECEIVED",
-          "options": {
-            "responseCode": 200
-          }
-        },
-        "id": "bf491e73-484b-474b-9664-54c6ae1d4cfa",
-        "name": "Responder 200 OK",
-        "type": "n8n-nodes-base.respondToWebhook",
-        "typeVersion": 1.1,
-        "position": [
-          20496,
-          4992
-        ]
-      },
-      {
-        "parameters": {
-          "respondWith": "text",
-          "responseBody": "EVENT_RECEIVED",
-          "options": {
-            "responseCode": 200
-          }
-        },
-        "id": "8d04df48-daa8-4a6c-8ffd-20fb5ec11b88",
-        "name": "Ack 200 (estado)",
-        "type": "n8n-nodes-base.respondToWebhook",
-        "typeVersion": 1.1,
-        "position": [
-          20496,
-          5280
-        ]
-      },
-      {
-        "parameters": {
-          "respondWith": "text",
-          "responseBody": "invalid signature",
-          "options": {
-            "responseCode": 403
-          }
-        },
-        "id": "f99f7f86-b226-4ab7-8baf-c0ed8bdff42d",
-        "name": "Rechazar Firma 403",
-        "type": "n8n-nodes-base.respondToWebhook",
-        "typeVersion": 1.1,
-        "position": [
-          20272,
-          5424
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "getAll",
-          "tableId": "={{ 'conversation_state' }}",
-          "limit": 1,
-          "filters": {
-            "conditions": [
-              {
-                "keyName": "={{ 'celular' }}",
-                "condition": "eq",
-                "keyValue": "={{ ($('Validar y Parsear').item.json.from || '').replace(/^57/, '') }}"
-              }
-            ]
-          }
-        },
-        "id": "b0a417c5-227b-407d-87b2-7f0b990aac0d",
-        "name": "Cargar Estado",
-        "type": "n8n-nodes-base.supabase",
-        "typeVersion": 1,
-        "position": [
-          20784,
-          4992
-        ],
-        "alwaysOutputData": true
-      },
-      {
-        "parameters": {
-          "jsCode": "// CEREBRO DE LA MAQUINA DE ESTADOS. Tabla de transiciones en un solo lugar (versionable).\n// Lee: mensaje parseado (Validar y Parsear) + estado actual (Cargar Estado).\n// Decide: action (responder|buscar|registrar|foto), next_paso, patch (campos a persistir) y wa_payload.\nconst p = $('Validar y Parsear').item.json;\nconst row = ($json && $json.celular) ? $json : {};\nconst from = p.from || '';\nconst celular10 = from.replace(/^57/, '');\nconst hadRow = !!(row && row.celular);\nconst paso = hadRow ? (row.paso || 'inicio') : 'inicio';\nconst text = (p.text || '').trim();\nconst btn = p.interactive_id || '';\nconst type = p.msg_type || '';\n\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nfunction buttons(body, arr){ return { messaging_product:'whatsapp', to: from, type:'interactive', interactive:{ type:'button', body:{ text: body }, action:{ buttons: arr.map(function(b){ return { type:'reply', reply:{ id:b.id, title:b.title } }; }) } } }; }\nfunction listMsg(body, rows){ return { messaging_product:'whatsapp', to: from, type:'interactive', interactive:{ type:'list', body:{ text: body }, action:{ button:'Elegir', sections:[ { title:'Opciones', rows: rows } ] } } }; }\n\nconst OCU = [ {id:'ocupacion_1',title:'Ocupación 1'},{id:'ocupacion_2',title:'Ocupación 2'},{id:'ocupacion_3',title:'Ocupación 3'},{id:'ocupacion_4',title:'Ocupación 4'} ];\n\nlet out = { action:'responder', wa_to: from, wa_payload: null, next_paso: paso, patch: {}, celular: from, celular10: celular10, had_row: hadRow, search_query: null, search_by: null, image_id: '' };\n\nswitch (paso) {\n  case 'esperando_correo': {\n    const email = text.toLowerCase();\n    const ok = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\n    if (!ok) { out.wa_payload = txt('Ese correo no parece válido. Escríbeme tu correo, por favor (ejemplo: nombre@correo.com).'); out.next_paso='esperando_correo'; out.patch={ paso:'esperando_correo' }; }\n    else { out.action='buscar'; out.search_by='email'; out.search_query={ email: email }; out.patch={ correo: email, distinct_id: email }; }\n    break;\n  }\n  case 'esperando_nombre': {\n    if (!text) { out.wa_payload = txt('Necesito tu nombre completo para continuar. Escríbelo, por favor.'); out.next_paso='esperando_nombre'; out.patch={ paso:'esperando_nombre' }; }\n    else { out.wa_payload = txt('Gracias. Ahora escríbeme tu número de cédula (solo números).'); out.next_paso='esperando_cedula'; out.patch={ nombre: text, paso:'esperando_cedula' }; }\n    break;\n  }\n  case 'esperando_cedula': {\n    const ced = text.replace(/\\D/g,'');\n    if (ced.length < 5) { out.wa_payload = txt('La cédula debe ser numérica. Escríbela de nuevo, por favor.'); out.next_paso='esperando_cedula'; out.patch={ paso:'esperando_cedula' }; }\n    else { out.wa_payload = listMsg('¿Cuál es tu ocupación? Elige una opción.', OCU); out.next_paso='esperando_ocupacion'; out.patch={ cedula: ced, paso:'esperando_ocupacion' }; }\n    break;\n  }\n  case 'esperando_ocupacion': {\n    if (['ocupacion_1','ocupacion_2','ocupacion_3','ocupacion_4'].indexOf(btn) === -1) { out.wa_payload = listMsg('Elige tu ocupación de la lista, por favor.', OCU); out.next_paso='esperando_ocupacion'; out.patch={ paso:'esperando_ocupacion' }; }\n    else {\n      const resumen = 'Confirmemos tus datos:\\n\\n' + 'Nombre: ' + (row.nombre||'') + '\\n' + 'Cédula: ' + (row.cedula||'') + '\\n' + 'Correo: ' + (row.correo||'') + '\\n' + 'Celular: ' + celular10 + '\\n\\n¿Es correcto?';\n      out.wa_payload = buttons(resumen, [ {id:'confirmar_si',title:'Sí, registrar'}, {id:'confirmar_no',title:'No, corregir'} ]);\n      out.next_paso='esperando_confirmacion';\n      out.patch={ ocupacion: btn, tags: ['grupo_1'], paso:'esperando_confirmacion' };\n    }\n    break;\n  }\n  case 'esperando_confirmacion': {\n    if (btn === 'confirmar_si') { out.action='registrar'; out.patch={ paso:'registrando' }; }\n    else if (btn === 'confirmar_no') { out.wa_payload = txt('Sin problema, empecemos de nuevo. Escríbeme tu nombre completo.'); out.next_paso='esperando_nombre'; out.patch={ paso:'esperando_nombre' }; }\n    else { out.wa_payload = buttons('¿Confirmas tus datos?', [ {id:'confirmar_si',title:'Sí, registrar'}, {id:'confirmar_no',title:'No, corregir'} ]); out.next_paso='esperando_confirmacion'; out.patch={ paso:'esperando_confirmacion' }; }\n    break;\n  }\n  case 'esperando_foto': {\n    if (type === 'image') { out.action='foto'; out.image_id = p.image_id || ''; out.patch={ paso:'procesando' }; }\n    else { out.wa_payload = txt('Por favor envíame la *foto* de tu factura para registrar tu compra y ganar puntos.'); out.next_paso='esperando_foto'; out.patch={ paso:'esperando_foto' }; }\n    break;\n  }\n  case 'esperando_csat': {\n    const n = parseInt(((text||btn)||'').replace(/\\D/g,''), 10);\n    if (n >= 1 && n <= 5) { out.wa_payload = txt('¡Gracias por tu calificación! 🙌 Cuando quieras registrar otro ticket, envíame la foto.'); out.next_paso='finalizado'; out.patch={ paso:'finalizado', datos: Object.assign({}, row.datos||{}, { csat: n }) }; }\n    else { out.wa_payload = txt('Califícanos del 1 al 5, por favor (solo el número).'); out.next_paso='esperando_csat'; out.patch={ paso:'esperando_csat' }; }\n    break;\n  }\n  case 'finalizado': {\n    if (type === 'image') { out.action='foto'; out.image_id = p.image_id || ''; out.patch={ paso:'procesando' }; }\n    else { out.wa_payload = txt('¿Quieres registrar otro ticket? Envíame la foto de la factura cuando quieras. 📸'); out.next_paso='esperando_foto'; out.patch={ paso:'esperando_foto' }; }\n    break;\n  }\n  case 'buscando':\n  case 'registrando':\n  case 'procesando': {\n    out.wa_payload = txt('Dame un segundo, estoy procesando tu solicitud… 🙏'); out.next_paso = paso; out.patch = {};\n    break;\n  }\n  default: {\n    // PRIMER CONTACTO: identificar por celular (honra el brief). El from de WhatsApp ya trae el numero.\n    // Si el search por cellphone no resuelve (labs), Procesar Busqueda cae a pedir el correo.\n    out.action='buscar'; out.search_by='cellphone'; out.search_query={ cellphone: celular10 };\n    out.patch={ paso:'buscando', celular: from, intentos: 0 };\n  }\n}\n\n\n// Construir URL con bracket notation (confirmado en A2: query[email]=...)\nif (out.action === 'buscar' && out.search_query) {\n  const BASE = 'https://api.superlikerslabs.com/v1';\n  const apiKey = encodeURIComponent($env.API_KEY || '');\n  let qs = 'api_key=' + apiKey + '&campaign=3z';\n  const sq = out.search_query;\n  const keys = Object.keys(sq);\n  for (let i=0; i<keys.length; i++) {\n    qs += '&query[' + keys[i] + ']=' + encodeURIComponent(sq[keys[i]]);\n  }\n  out.search_url = BASE + '/participants/search?' + qs;\n}\n\nreturn [{ json: out }];\n"
-        },
-        "id": "856f915d-e5b8-4b3e-bd2f-f9f299204ac9",
-        "name": "Decidir",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          21008,
-          4992
-        ]
-      },
-      {
-        "parameters": {
-          "rules": {
-            "values": [
-              {
-                "conditions": {
-                  "options": {
-                    "caseSensitive": true,
-                    "leftValue": "",
-                    "typeValidation": "loose",
-                    "version": 2
-                  },
-                  "conditions": [
-                    {
-                      "id": "618ec0eb-942a-45bb-a30d-3ac631daf995",
-                      "leftValue": "={{ $json.action }}",
-                      "rightValue": "responder",
-                      "operator": {
-                        "type": "string",
-                        "operation": "equals"
-                      }
-                    }
-                  ],
-                  "combinator": "and"
-                },
-                "renameOutput": true,
-                "outputKey": "responder"
-              },
-              {
-                "conditions": {
-                  "options": {
-                    "caseSensitive": true,
-                    "leftValue": "",
-                    "typeValidation": "loose",
-                    "version": 2
-                  },
-                  "conditions": [
-                    {
-                      "id": "28547685-316d-4b78-8fe6-0b33f679103b",
-                      "leftValue": "={{ $json.action }}",
-                      "rightValue": "buscar",
-                      "operator": {
-                        "type": "string",
-                        "operation": "equals"
-                      }
-                    }
-                  ],
-                  "combinator": "and"
-                },
-                "renameOutput": true,
-                "outputKey": "buscar"
-              },
-              {
-                "conditions": {
-                  "options": {
-                    "caseSensitive": true,
-                    "leftValue": "",
-                    "typeValidation": "loose",
-                    "version": 2
-                  },
-                  "conditions": [
-                    {
-                      "id": "61ee2fab-89f6-4702-bb66-7b216f3cb8ab",
-                      "leftValue": "={{ $json.action }}",
-                      "rightValue": "registrar",
-                      "operator": {
-                        "type": "string",
-                        "operation": "equals"
-                      }
-                    }
-                  ],
-                  "combinator": "and"
-                },
-                "renameOutput": true,
-                "outputKey": "registrar"
-              },
-              {
-                "conditions": {
-                  "options": {
-                    "caseSensitive": true,
-                    "leftValue": "",
-                    "typeValidation": "loose",
-                    "version": 2
-                  },
-                  "conditions": [
-                    {
-                      "id": "b11c3c16-15c8-416f-8aa0-989be4ad04a5",
-                      "leftValue": "={{ $json.action }}",
-                      "rightValue": "foto",
-                      "operator": {
-                        "type": "string",
-                        "operation": "equals"
-                      }
-                    }
-                  ],
-                  "combinator": "and"
-                },
-                "renameOutput": true,
-                "outputKey": "foto"
-              }
-            ]
-          },
-          "options": {
-            "fallbackOutput": "none"
-          }
-        },
-        "id": "fe87d9c8-a4cf-4823-ba66-2ee39ffa2707",
-        "name": "Router Acción",
-        "type": "n8n-nodes-base.switch",
-        "typeVersion": 3.4,
-        "position": [
-          21216,
-          4992
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "// SL Buscar — replica EXACTA del metodo que dio 200 en la A2 (diagnostico 9N5BNAWdVJLlbgyX).\n// Usa helpers.httpRequest con qs anidado { query: { email|cellphone } } -> n8n lo serializa como query[campo]=...\nconst helpers = this.helpers;\nconst API_KEY = $env.API_KEY;\nconst BASE = 'https://api.superlikerslabs.com/v1';\nconst d = $('Decidir').item.json;\nconst sq = d.search_query || {};\nconst opt = {\n  method: 'GET',\n  url: BASE + '/participants/search',\n  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + API_KEY },\n  qs: { campaign: '3z', api_key: API_KEY, query: sq },\n  json: true, returnFullResponse: true, ignoreHttpStatusErrors: true, timeout: 20000\n};\nlet status = null, body = null, err = null;\ntry {\n  const res = await helpers.httpRequest(opt);\n  status = res.statusCode; body = res.body;\n} catch (e) {\n  const r = e.response || {};\n  status = e.statusCode || r.statusCode || null;\n  body = r.body || r.data || null; err = e.message;\n}\nreturn [{ json: { status, body, err, search_query: sq } }];\n"
-        },
-        "id": "3d0bad01-3d65-4e64-8bd4-c74f695a5462",
-        "name": "SL Buscar",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          21440,
-          4864
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "// Procesa la respuesta de SL Buscar (status + body).\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nconst search_by = d.search_by;\nconst sl = $('SL Buscar').item.json || {};\nconst status = sl.status;\nlet resp = sl.body || {};\nlet participant = resp;\nif (resp && resp.object) participant = resp.object;\nelse if (resp && resp.participant) participant = resp.participant;\nelse if (resp && resp.data) participant = Array.isArray(resp.data) ? (resp.data[0]||{}) : resp.data;\nelse if (resp && Array.isArray(resp.participants)) participant = resp.participants[0] || {};\nelse if (Array.isArray(resp)) participant = resp[0] || {};\nconst found = status === 200 && !!(participant && (participant.email || participant.distinct_id || participant.points !== undefined || participant['nombre-completo']));\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nlet out = { action:'responder', wa_to: from, wa_payload: null, next_paso:'', patch:{}, celular: d.celular, had_row: d.had_row };\nif (found) {\n  const correo = participant.email || participant.distinct_id || (d.search_query && d.search_query.email) || '';\n  out.wa_payload = txt('¡Te encontramos! 🎉 Ya estás registrado en la campaña. Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.');\n  out.next_paso = 'esperando_foto';\n  out.patch = { paso:'esperando_foto', participante_existe: true, correo: correo, distinct_id: correo };\n} else if (search_by === 'cellphone') {\n  out.wa_payload = txt('¡Hola! 👋 Soy el asistente de la campaña. Para empezar y validar tu registro, escríbeme tu *correo electrónico*.');\n  out.next_paso = 'esperando_correo';\n  out.patch = { paso:'esperando_correo', participante_existe: false };\n} else {\n  out.wa_payload = txt('No encontré una cuenta con ese correo, así que vamos a registrarte. 📝 Escríbeme tu *nombre completo*.');\n  out.next_paso = 'esperando_nombre';\n  out.patch = { paso:'esperando_nombre', participante_existe: false };\n}\nreturn [{ json: out }];\n"
-        },
-        "id": "552cdde2-b645-4e03-910b-9037084262b8",
-        "name": "Procesar Búsqueda",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          21664,
-          4864
-        ]
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "https://api.superlikerslabs.com/v1/participants",
-          "sendHeaders": true,
-          "headerParameters": {
-            "parameters": [
-              {
-                "name": "Authorization",
-                "value": "=Bearer {{ $env.API_KEY }}"
-              }
-            ]
-          },
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ { \"api_key\": $env.API_KEY, \"campaign\": \"3z\", \"distinct_id\": $('Cargar Estado').item.json.correo, \"properties\": { \"nombre-completo\": $('Cargar Estado').item.json.nombre, \"cedula\": $('Cargar Estado').item.json.cedula, \"email\": $('Cargar Estado').item.json.correo, \"celular\": ($('Validar y Parsear').item.json.from || '').replace(/^57/, ''), \"ocupacion\": $('Cargar Estado').item.json.ocupacion, \"tags\": ($('Cargar Estado').item.json.tags || ['grupo_1']), \"pais\": \"CO\", \"password\": 'SL-' + Math.random().toString(36).slice(2,12) + 'x9', \"active\": true, \"verified_cellphone\": true, \"not_send_verify_registration\": true } } }}",
-          "options": {}
-        },
-        "id": "3b2b6c4e-4e3c-435d-af8b-b7cde85f2650",
-        "name": "SL Registrar",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.2,
-        "position": [
-          21440,
-          5040
-        ],
-        "alwaysOutputData": true,
-        "onError": "continueRegularOutput"
-      },
-      {
-        "parameters": {
-          "jsCode": "// Procesa la respuesta de POST /participants. Idempotente: duplicado se trata como exito.\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nlet resp = {};\ntry { resp = $('SL Registrar').item.json || {}; } catch (e) { resp = {}; }\nconst blob = JSON.stringify(resp).toLowerCase();\nconst created = blob.indexOf('exitosamente') !== -1 || blob.indexOf('creado') !== -1 || !!resp.distinct_id || resp.success === true;\nconst dup = blob.indexOf('ya esta siendo usado') !== -1 || (blob.indexOf('code_error') !== -1 && blob.indexOf('21') !== -1);\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nlet out = { action:'responder', wa_to: from, wa_payload:null, next_paso:'', patch:{}, celular: d.celular, had_row: d.had_row };\nif (created || dup) {\n  out.wa_payload = txt('¡Listo, quedaste registrado! ✅ Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.');\n  out.next_paso = 'esperando_foto';\n  out.patch = { paso:'esperando_foto', participante_existe: true };\n} else {\n  out.wa_payload = txt('Tuve un problema registrándote. Verifica tus datos e inténtalo de nuevo: escríbeme tu *nombre completo*.');\n  out.next_paso = 'esperando_nombre';\n  out.patch = { paso:'esperando_nombre' };\n}\nreturn [{ json: out }];\n"
-        },
-        "id": "4b76801a-82be-4c5d-aa80-181d58ac5fb0",
-        "name": "Procesar Registro",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          21664,
-          5040
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "// [SEAM ACTIVIDAD 6] Aqui va la cadena real:\n//   descargar media de WhatsApp (GET /{media_id}) -> POST /photos (guardar id_actividad_foto)\n//   -> leer factura con OpenAI Structured Outputs ({legible, ref, products[]})\n//   -> chequear idempotencia ref en transactions -> POST /retail/buy -> POST /entries/accept\n//   -> log en transactions -> confirmar puntos al usuario.\n// Por ahora: acuse de recibo + handoff a CSAT para que el loop conversacional sea demostrable end-to-end.\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nconst out = {\n  action:'responder', wa_to: from,\n  wa_payload: txt('¡Recibí tu foto! 📸 Estoy procesando tu factura. (La lectura con IA + registro de venta + aceptación se completan en la Actividad 6.)'),\n  next_paso:'esperando_csat',\n  patch:{ paso:'esperando_csat', id_actividad_foto: 'PENDIENTE_A6' },\n  celular: d.celular, had_row: d.had_row\n};\nreturn [{ json: out }];\n"
-        },
-        "id": "7063d51c-7eb3-438c-95ba-056ffde2f19b",
-        "name": "Foto (handoff A6)",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          21440,
-          5232
-        ]
-      },
-      {
-        "parameters": {},
-        "id": "21d3de0e-b5fb-42fa-a9db-0986a3748852",
-        "name": "Normalizar Salida",
-        "type": "n8n-nodes-base.noOp",
-        "typeVersion": 1,
-        "position": [
-          21904,
-          4992
-        ]
-      },
-      {
-        "parameters": {
-          "method": "POST",
-          "url": "={{ 'https://graph.facebook.com/v21.0/' + $('Validar y Parsear').item.json.phone_number_id + '/messages' }}",
-          "authentication": "genericCredentialType",
-          "genericAuthType": "httpHeaderAuth",
-          "sendBody": true,
-          "specifyBody": "json",
-          "jsonBody": "={{ $json.wa_payload }}",
-          "options": {}
-        },
-        "id": "45665103-5400-4445-8b71-3fa02bf3e158",
-        "name": "Enviar WhatsApp",
-        "type": "n8n-nodes-base.httpRequest",
-        "typeVersion": 4.2,
-        "position": [
-          22128,
-          4864
-        ]
-      },
-      {
-        "parameters": {
-          "jsCode": "// Mezcla estado previo + patch -> registro final de columnas para conversation_state.\nconst p = $('Validar y Parsear').item.json;\nconst from = p.from || '';\nlet row = {};\ntry { row = $('Cargar Estado').item.json || {}; } catch (e) { row = {}; }\nconst hadRow = !!(row && row.celular);\nconst cur = $json || {};\nconst patch = cur.patch || {};\nconst nextPaso = patch.paso || cur.next_paso || row.paso || 'inicio';\nfunction pick(k, dflt){ return (patch[k] !== undefined) ? patch[k] : ((row[k] !== undefined && row[k] !== null) ? row[k] : dflt); }\nconst rec = {\n  celular: (from || '').replace(/^57/, ''),\n  paso: nextPaso,\n  distinct_id: pick('distinct_id', null),\n  nombre: pick('nombre', null),\n  correo: pick('correo', null),\n  cedula: pick('cedula', null),\n  ocupacion: pick('ocupacion', null),\n  tags: pick('tags', null),\n  participante_existe: pick('participante_existe', null),\n  id_actividad_foto: pick('id_actividad_foto', null),\n  datos: pick('datos', {}),\n  intentos: pick('intentos', 0),\n  last_activity_at: new Date().toISOString(),\n  had_row: hadRow,\n  wa_payload: cur.wa_payload\n};\nreturn [{ json: rec }];\n"
-        },
-        "id": "e724a7fa-b9bc-4f2a-91e0-3e25937ccc7d",
-        "name": "Preparar Estado",
-        "type": "n8n-nodes-base.code",
-        "typeVersion": 2,
-        "position": [
-          22128,
-          5120
-        ]
-      },
-      {
-        "parameters": {
-          "conditions": {
-            "options": {
-              "caseSensitive": true,
-              "leftValue": "",
-              "typeValidation": "loose",
-              "version": 2
-            },
-            "conditions": [
-              {
-                "id": "467ab1e4-276e-4df2-8cac-dc2a52e96420",
-                "leftValue": "={{ $json.had_row }}",
-                "rightValue": "",
-                "operator": {
-                  "type": "boolean",
-                  "operation": "true",
-                  "singleValue": true
-                }
-              }
-            ],
-            "combinator": "and"
-          },
-          "options": {}
-        },
-        "id": "ba2fdaba-d1d0-41c9-99be-6defdccdfde7",
-        "name": "¿Existía?",
-        "type": "n8n-nodes-base.if",
-        "typeVersion": 2.2,
-        "position": [
-          22336,
-          5120
-        ]
-      },
-      {
-        "parameters": {
-          "operation": "update",
-          "tableId": "={{ 'conversation_state' }}",
-          "filters": {
-            "conditions": [
-              {
-                "keyName": "={{ 'celular' }}",
-                "condition": "eq",
-                "keyValue": "={{ $json.celular }}"
-              }
-            ]
-          },
-          "dataToSend": "autoMapInputData",
-          "inputsToIgnore": "had_row,wa_payload"
-        },
-        "id": "430d0974-9de8-4768-9fd2-4f8974b5aaca",
-        "name": "Guardar Estado (update)",
-        "type": "n8n-nodes-base.supabase",
-        "typeVersion": 1,
-        "position": [
-          22560,
-          5024
-        ]
-      },
-      {
-        "parameters": {
-          "tableId": "={{ 'conversation_state' }}",
-          "dataToSend": "autoMapInputData",
-          "inputsToIgnore": "had_row,wa_payload"
-        },
-        "id": "4d8cff92-874e-4218-8cc6-e087d42fb5ab",
-        "name": "Crear Estado (insert)",
-        "type": "n8n-nodes-base.supabase",
-        "typeVersion": 1,
-        "position": [
-          22560,
-          5232
-        ]
-      },
-      {
-        "parameters": {
-          "content": "## Verificacion (GET)\nMeta manda GET con hub.challenge + hub.verify_token.\nSe compara contra $env.WHATSAPP_VERIFY_TOKEN y se devuelve el challenge.",
-          "height": 260,
-          "width": 420,
-          "color": 4
-        },
-        "id": "4d88531b-ea33-42d5-8120-ebcc3eea407d",
-        "name": "Nota GET",
-        "type": "n8n-nodes-base.stickyNote",
-        "typeVersion": 1,
-        "position": [
-          19520,
-          4576
-        ]
-      },
-      {
-        "parameters": {
-          "content": "## Entrada + Firma (POST)\nValidar y Parsear: HMAC-SHA256 (X-Hub-Signature-256) + parseo de texto/boton/lista/imagen.\nAck 200 a Meta ANTES de procesar.",
-          "height": 300,
-          "width": 620,
-          "color": 5
-        },
-        "id": "ff08d3b0-e5ee-4eb6-98ff-3da242a42fdc",
-        "name": "Nota POST",
-        "type": "n8n-nodes-base.stickyNote",
-        "typeVersion": 1,
-        "position": [
-          19520,
-          4944
-        ]
-      },
-      {
-        "parameters": {
-          "content": "## Maquina de estados (A5)\nCargar Estado (Supabase, working memory) -> Decidir (tabla de transiciones en un solo Code) -> Router por accion.\nResponder | Buscar (celular->email fallback) | Registrar | Foto.\nConverge en Normalizar -> Enviar WhatsApp + persistir estado (update/insert).",
-          "height": 260,
-          "width": 900,
-          "color": 7
-        },
-        "id": "949733ad-5dce-4d2d-be61-684e2712da05",
-        "name": "Nota Maquina",
-        "type": "n8n-nodes-base.stickyNote",
-        "typeVersion": 1,
-        "position": [
-          20784,
-          4640
-        ]
-      },
-      {
-        "parameters": {
-          "content": "## SEAM Actividad 6\n'Foto (handoff A6)' es placeholder.\nAqui ira: media -> POST /photos -> lectura IA (OpenAI Structured Outputs) -> /retail/buy -> /entries/accept -> log transactions -> confirmar puntos.",
-          "height": 220,
-          "width": 420,
-          "color": 3
-        },
-        "id": "7079400a-9aec-473a-abad-ff7ac29efe4f",
-        "name": "Nota A6",
-        "type": "n8n-nodes-base.stickyNote",
-        "typeVersion": 1,
-        "position": [
-          21376,
-          5392
-        ]
-      }
-    ],
-    "connections": {
-      "Webhook Verify (GET)": {
-        "main": [
-          [
-            {
-              "node": "Token Correcto?",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Token Correcto?": {
-        "main": [
-          [
-            {
-              "node": "Responder Challenge",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Rechazar GET 403",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Webhook Recibe (POST)": {
-        "main": [
-          [
-            {
-              "node": "Validar y Parsear",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Validar y Parsear": {
-        "main": [
-          [
-            {
-              "node": "Firma Valida?",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Firma Valida?": {
-        "main": [
-          [
-            {
-              "node": "Es Mensaje?",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Rechazar Firma 403",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Es Mensaje?": {
-        "main": [
-          [
-            {
-              "node": "Responder 200 OK",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Ack 200 (estado)",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Responder 200 OK": {
-        "main": [
-          [
-            {
-              "node": "Cargar Estado",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Cargar Estado": {
-        "main": [
-          [
-            {
-              "node": "Decidir",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Decidir": {
-        "main": [
-          [
-            {
-              "node": "Router Acción",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Router Acción": {
-        "main": [
-          [
-            {
-              "node": "Normalizar Salida",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "SL Buscar",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "SL Registrar",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Foto (handoff A6)",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "SL Buscar": {
-        "main": [
-          [
-            {
-              "node": "Procesar Búsqueda",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Procesar Búsqueda": {
-        "main": [
-          [
-            {
-              "node": "Normalizar Salida",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "SL Registrar": {
-        "main": [
-          [
-            {
-              "node": "Procesar Registro",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Procesar Registro": {
-        "main": [
-          [
-            {
-              "node": "Normalizar Salida",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Foto (handoff A6)": {
-        "main": [
-          [
-            {
-              "node": "Normalizar Salida",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Normalizar Salida": {
-        "main": [
-          [
-            {
-              "node": "Enviar WhatsApp",
-              "type": "main",
-              "index": 0
-            },
-            {
-              "node": "Preparar Estado",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "Preparar Estado": {
-        "main": [
-          [
-            {
-              "node": "¿Existía?",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      },
-      "¿Existía?": {
-        "main": [
-          [
-            {
-              "node": "Guardar Estado (update)",
-              "type": "main",
-              "index": 0
-            }
-          ],
-          [
-            {
-              "node": "Crear Estado (insert)",
-              "type": "main",
-              "index": 0
-            }
-          ]
-        ]
-      }
-    }
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
   },
-  "tags": [],
+  "versionId": "241016d8-64de-486c-aaaf-2ab3c99ac593",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp",
-    "templateCredsSetupCompleted": true
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6a0f9354bcd0da44397209ccd0f14d2b8438d71a6cd4b99d332f0b62dd6868f"
   },
-  "parentFolderId": null,
-  "description": "Reto SuperLikers A4: webhook WhatsApp Cloud API en n8n. GET verifica hub.verify_token y devuelve el challenge; POST valida X-Hub-Signature-256 (HMAC SHA256) y responde al usuario via Graph API. Tokens via $env y credencial.",
-  "scopes": [
-    "workflow:create",
-    "workflow:delete",
-    "workflow:execute",
-    "workflow:execute-chat",
-    "workflow:list",
-    "workflow:move",
-    "workflow:publish",
-    "workflow:read",
-    "workflow:share",
-    "workflow:unpublish",
-    "workflow:unshare",
-    "workflow:update",
-    "workflow:updateRedactionSetting"
-  ],
-  "canExecute": true
+  "id": "hMUrIGCkq3qmUrA2",
+  "tags": []
 }
