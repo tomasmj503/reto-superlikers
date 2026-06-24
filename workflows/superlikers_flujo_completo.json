@@ -1,0 +1,1712 @@
+{
+  "name": "JUTILABS · Reto SL · Flujo Completo",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "superlikers-whatsapp",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "ebcd1635-004f-45ab-a7e8-d1c63409bf37",
+      "name": "Webhook Verify (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        33744,
+        3792
+      ],
+      "webhookId": "16660098-bb18-4844-900a-93972eeb905a"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "31638b60-7756-4d21-af47-c0cc8182ef82",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "={{ $env.WHATSAPP_VERIFY_TOKEN }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a00aeb85-df20-4a10-b048-2975341f8f58",
+      "name": "Token Correcto?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        33968,
+        3792
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $('Webhook Verify (GET)').item.json.query['hub.challenge'] }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "01cf27ff-aea0-4be2-9538-9bd56dd36171",
+      "name": "Responder Challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        34192,
+        3696
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "cc0438bd-f70e-4e99-9607-26dc5097265f",
+      "name": "Rechazar GET 403",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        34192,
+        3888
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "superlikers-whatsapp",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "05fb3803-ed42-4244-ba01-4866d8febe4b",
+      "name": "Webhook Recibe (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        33744,
+        4304
+      ],
+      "webhookId": "8ee1b78b-5f59-43f0-903d-3cb68d54911c"
+    },
+    {
+      "parameters": {
+        "jsCode": "// HMAC-SHA256 en JS puro (n8n task runner: sin require ni crypto global; solo Buffer).\nfunction sha256Bytes(bytes) {\n  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];\n  let h0=0x6a09e667,h1=0xbb67ae85,h2=0x3c6ef372,h3=0xa54ff53a,h4=0x510e527f,h5=0x9b05688c,h6=0x1f83d9ab,h7=0x5be0cd19;\n  const msg = bytes.slice();\n  const origLenBits = msg.length * 8;\n  msg.push(0x80);\n  while (msg.length % 64 !== 56) msg.push(0x00);\n  const hi = Math.floor(origLenBits / 0x100000000);\n  const lo = origLenBits >>> 0;\n  msg.push((hi>>>24)&0xff,(hi>>>16)&0xff,(hi>>>8)&0xff,hi&0xff);\n  msg.push((lo>>>24)&0xff,(lo>>>16)&0xff,(lo>>>8)&0xff,lo&0xff);\n  function rotr(x,n){ return (x>>>n)|(x<<(32-n)); }\n  for (let i=0;i<msg.length;i+=64){\n    const w=new Array(64);\n    for(let t=0;t<16;t++){ w[t]=((msg[i+t*4]<<24)|(msg[i+t*4+1]<<16)|(msg[i+t*4+2]<<8)|(msg[i+t*4+3]))>>>0; }\n    for(let t=16;t<64;t++){\n      const s0=rotr(w[t-15],7)^rotr(w[t-15],18)^(w[t-15]>>>3);\n      const s1=rotr(w[t-2],17)^rotr(w[t-2],19)^(w[t-2]>>>10);\n      w[t]=(w[t-16]+s0+w[t-7]+s1)>>>0;\n    }\n    let a=h0,b=h1,c=h2,d=h3,e=h4,f=h5,g=h6,h=h7;\n    for(let t=0;t<64;t++){\n      const S1=rotr(e,6)^rotr(e,11)^rotr(e,25);\n      const ch=(e&f)^((~e)&g);\n      const temp1=(h+S1+ch+K[t]+w[t])>>>0;\n      const S0=rotr(a,2)^rotr(a,13)^rotr(a,22);\n      const maj=(a&b)^(a&c)^(b&c);\n      const temp2=(S0+maj)>>>0;\n      h=g;g=f;f=e;e=(d+temp1)>>>0;d=c;c=b;b=a;a=(temp1+temp2)>>>0;\n    }\n    h0=(h0+a)>>>0;h1=(h1+b)>>>0;h2=(h2+c)>>>0;h3=(h3+d)>>>0;h4=(h4+e)>>>0;h5=(h5+f)>>>0;h6=(h6+g)>>>0;h7=(h7+h)>>>0;\n  }\n  const hs=[h0,h1,h2,h3,h4,h5,h6,h7]; const out=[];\n  for(const x of hs){ out.push((x>>>24)&0xff,(x>>>16)&0xff,(x>>>8)&0xff,x&0xff); }\n  return out;\n}\nfunction hmacSha256Hex(keyStr, msgStr){\n  const block=64;\n  let key=Array.from(Buffer.from(keyStr,'utf8'));\n  if(key.length>block) key=sha256Bytes(key);\n  if(key.length<block) key=key.concat(new Array(block-key.length).fill(0));\n  const ipad=key.map(function(b){return b^0x36;});\n  const opad=key.map(function(b){return b^0x5c;});\n  const msg=Array.from(Buffer.from(msgStr,'utf8'));\n  const inner=sha256Bytes(ipad.concat(msg));\n  const outer=sha256Bytes(opad.concat(inner));\n  return outer.map(function(b){return b.toString(16).padStart(2,'0');}).join('');\n}\n\nconst item = $input.first();\n\n// 1) Body crudo\nlet raw = '';\nif (item.binary && item.binary.data && item.binary.data.data) {\n  raw = Buffer.from(item.binary.data.data, 'base64').toString('utf8');\n} else if (typeof item.json.body === 'string') {\n  raw = item.json.body;\n} else if (item.json.body) {\n  raw = JSON.stringify(item.json.body);\n}\n\nconst headers = item.json.headers || {};\nconst header_sig = headers['x-hub-signature-256'] || '';\nconst appSecret = $env.WHATSAPP_APP_SECRET || '';\n\n// 2) Firma\nconst computed_signature = hmacSha256Hex(appSecret, raw);\nconst valid = header_sig.length > 0 && ('sha256=' + computed_signature) === header_sig;\n\n// 3) Parsear payload\nlet payload = {};\ntry { payload = JSON.parse(raw); } catch(e) { payload = (typeof item.json.body === 'object' ? item.json.body : {}); }\nconst change = (((payload.entry || [])[0] || {}).changes || [])[0] || {};\nconst value = change.value || {};\nconst msg = (value.messages || [])[0] || null;\nconst is_message = !!msg;\nconst from = msg ? (msg.from || '') : '';\nconst phone_number_id = (value.metadata || {}).phone_number_id || '';\n\n// 4) Enriquecer: tipo, texto, interactive (boton/lista), imagen\nlet msg_type = msg ? (msg.type || '') : '';\nlet text = '';\nlet interactive_id = '';\nlet interactive_title = '';\nlet image_id = '';\nlet msg_text = '';\nif (msg) {\n  if (msg.type === 'text') { text = (msg.text || {}).body || ''; msg_text = text; }\n  else if (msg.type === 'interactive') {\n    const it = msg.interactive || {};\n    if (it.type === 'button_reply') { interactive_id = (it.button_reply || {}).id || ''; interactive_title = (it.button_reply || {}).title || ''; }\n    else if (it.type === 'list_reply') { interactive_id = (it.list_reply || {}).id || ''; interactive_title = (it.list_reply || {}).title || ''; }\n    msg_text = interactive_title || interactive_id;\n  }\n  else if (msg.type === 'image') { image_id = (msg.image || {}).id || ''; msg_text = '[imagen]'; }\n  else { msg_text = '[' + (msg.type || 'desconocido') + ']'; }\n}\n\nreturn [{ json: { valid, computed_signature, header_sig, is_message, from, phone_number_id, msg_type, text, interactive_id, interactive_title, image_id, msg_text, message_id: msg ? (msg.id || '') : '' } }];\n"
+      },
+      "id": "b29dd5ec-cedf-47e3-9e06-ceaf918c9ec5",
+      "name": "Validar y Parsear",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        33968,
+        4304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2660ea04-7c74-460e-a442-e914a10d85ef",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "48168f5f-0b1c-4002-ae0d-5dfcf2a0881c",
+      "name": "Firma Valida?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        34192,
+        4304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cc4c9875-55e1-4fc4-816e-94b84efa748f",
+              "leftValue": "={{ $json.is_message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "affc7816-38a8-46ce-b19b-793ac8c90a9f",
+      "name": "Es Mensaje?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        34416,
+        4208
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "ef9bef15-6920-40e4-bff2-89eb9ed42ce5",
+      "name": "Responder 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        34640,
+        4112
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "EVENT_RECEIVED",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "32b0c028-559a-4937-aad0-70b72ef3f4ef",
+      "name": "Ack 200 (estado)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        34640,
+        4400
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "invalid signature",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "id": "6bb0b43a-cafb-4206-8235-0e005cb65d74",
+      "name": "Rechazar Firma 403",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        34416,
+        4544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "={{ 'conversation_state' }}",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "={{ 'celular' }}",
+              "condition": "eq",
+              "keyValue": "={{ ($('Validar y Parsear').item.json.from || '').replace(/^57/, '') }}"
+            }
+          ]
+        }
+      },
+      "id": "482b48c3-4eb0-493e-892b-4829c5f9c0db",
+      "name": "Cargar Estado",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        34928,
+        4112
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mMeRwI2wAHHU1NtO",
+          "name": "Superlikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// CEREBRO DE LA MAQUINA DE ESTADOS. Tabla de transiciones en un solo lugar (versionable).\n// Lee: mensaje parseado (Validar y Parsear) + estado actual (Cargar Estado).\n// Decide: action (responder|buscar|registrar|foto), next_paso, patch (campos a persistir) y wa_payload.\nconst p = $('Validar y Parsear').item.json;\nconst row = ($json && $json.celular) ? $json : {};\nconst from = p.from || '';\nconst celular10 = from.replace(/^57/, '');\nconst hadRow = !!(row && row.celular);\nconst paso = hadRow ? (row.paso || 'inicio') : 'inicio';\nconst text = (p.text || '').trim();\nconst btn = p.interactive_id || '';\nconst type = p.msg_type || '';\n\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nfunction buttons(body, arr){ return { messaging_product:'whatsapp', to: from, type:'interactive', interactive:{ type:'button', body:{ text: body }, action:{ buttons: arr.map(function(b){ return { type:'reply', reply:{ id:b.id, title:b.title } }; }) } } }; }\nfunction listMsg(body, rows){ return { messaging_product:'whatsapp', to: from, type:'interactive', interactive:{ type:'list', body:{ text: body }, action:{ button:'Elegir', sections:[ { title:'Opciones', rows: rows } ] } } }; }\n\nconst OCU = [ {id:'ocupacion_1',title:'Ocupación 1'},{id:'ocupacion_2',title:'Ocupación 2'},{id:'ocupacion_3',title:'Ocupación 3'},{id:'ocupacion_4',title:'Ocupación 4'} ];\n\nlet out = { action:'responder', wa_to: from, wa_payload: null, next_paso: paso, patch: {}, celular: from, celular10: celular10, had_row: hadRow, search_query: null, search_by: null, image_id: '' };\n\nswitch (paso) {\n  case 'esperando_correo': {\n    const email = text.toLowerCase();\n    const ok = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\n    if (!ok) { out.wa_payload = txt('Ese correo no parece válido. Escríbeme tu correo, por favor (ejemplo: nombre@correo.com).'); out.next_paso='esperando_correo'; out.patch={ paso:'esperando_correo' }; }\n    else { out.action='buscar'; out.search_by='email'; out.search_query={ email: email }; out.patch={ correo: email, distinct_id: email }; }\n    break;\n  }\n  case 'esperando_nombre': {\n    if (!text) { out.wa_payload = txt('Necesito tu nombre completo para continuar. Escríbelo, por favor.'); out.next_paso='esperando_nombre'; out.patch={ paso:'esperando_nombre' }; }\n    else { out.wa_payload = txt('Gracias. Ahora escríbeme tu número de cédula (solo números).'); out.next_paso='esperando_cedula'; out.patch={ nombre: text, paso:'esperando_cedula' }; }\n    break;\n  }\n  case 'esperando_cedula': {\n    const ced = text.replace(/\\D/g,'');\n    if (ced.length < 5) { out.wa_payload = txt('La cédula debe ser numérica. Escríbela de nuevo, por favor.'); out.next_paso='esperando_cedula'; out.patch={ paso:'esperando_cedula' }; }\n    else { out.wa_payload = listMsg('¿Cuál es tu ocupación? Elige una opción.', OCU); out.next_paso='esperando_ocupacion'; out.patch={ cedula: ced, paso:'esperando_ocupacion' }; }\n    break;\n  }\n  case 'esperando_ocupacion': {\n    if (['ocupacion_1','ocupacion_2','ocupacion_3','ocupacion_4'].indexOf(btn) === -1) { out.wa_payload = listMsg('Elige tu ocupación de la lista, por favor.', OCU); out.next_paso='esperando_ocupacion'; out.patch={ paso:'esperando_ocupacion' }; }\n    else {\n      const resumen = 'Confirmemos tus datos:\\n\\n' + 'Nombre: ' + (row.nombre||'') + '\\n' + 'Cédula: ' + (row.cedula||'') + '\\n' + 'Correo: ' + (row.correo||'') + '\\n' + 'Celular: ' + celular10 + '\\n\\n¿Es correcto?';\n      out.wa_payload = buttons(resumen, [ {id:'confirmar_si',title:'Sí, registrar'}, {id:'confirmar_no',title:'No, corregir'} ]);\n      out.next_paso='esperando_confirmacion';\n      out.patch={ ocupacion: btn, tags: ['grupo_1'], paso:'esperando_confirmacion' };\n    }\n    break;\n  }\n  case 'esperando_confirmacion': {\n    if (btn === 'confirmar_si') { out.action='registrar'; out.patch={ paso:'registrando' }; }\n    else if (btn === 'confirmar_no') { out.wa_payload = txt('Sin problema, empecemos de nuevo. Escríbeme tu nombre completo.'); out.next_paso='esperando_nombre'; out.patch={ paso:'esperando_nombre' }; }\n    else { out.wa_payload = buttons('¿Confirmas tus datos?', [ {id:'confirmar_si',title:'Sí, registrar'}, {id:'confirmar_no',title:'No, corregir'} ]); out.next_paso='esperando_confirmacion'; out.patch={ paso:'esperando_confirmacion' }; }\n    break;\n  }\n  case 'esperando_foto': {\n    if (type === 'image') { out.action='foto'; out.image_id = p.image_id || ''; out.patch={ paso:'procesando' }; }\n    else { out.wa_payload = txt('Por favor envíame la *foto* de tu factura para registrar tu compra y ganar puntos.'); out.next_paso='esperando_foto'; out.patch={ paso:'esperando_foto' }; }\n    break;\n  }\n  case 'esperando_csat': {\n    const n = parseInt(((text||btn)||'').replace(/\\D/g,''), 10);\n    if (n >= 1 && n <= 5) { out.wa_payload = txt('¡Gracias por tu calificación! 🙏 Cuando quieras registrar otro ticket, envíame la foto.'); out.next_paso='finalizado'; out.patch={ paso:'finalizado', datos: Object.assign({}, row.datos||{}, { csat: n }) }; }\n    else { out.wa_payload = txt('Calíficanos del 1 al 5, por favor (solo el número).'); out.next_paso='esperando_csat'; out.patch={ paso:'esperando_csat' }; }\n    break;\n  }\n  case 'finalizado': {\n    if (type === 'image') { out.action='foto'; out.image_id = p.image_id || ''; out.patch={ paso:'procesando' }; }\n    else { out.wa_payload = txt('¿Quieres registrar otro ticket? Envíame la foto de la factura cuando quieras. 📸'); out.next_paso='esperando_foto'; out.patch={ paso:'esperando_foto' }; }\n    break;\n  }\n  case 'buscando':\n  case 'registrando':\n  case 'procesando': {\n    out.wa_payload = txt('Dame un segundo, estoy procesando tu solicitud… ⏳'); out.next_paso = paso; out.patch = {};\n    break;\n  }\n  default: {\n    out.action='buscar'; out.search_by='cellphone'; out.search_query={ cellphone: celular10 };\n    out.patch={ paso:'buscando', celular: from, intentos: 0 };\n  }\n}\n\nif (out.action === 'buscar' && out.search_query) {\n  const BASE = 'https://api.superlikerslabs.com/v1';\n  const apiKey = encodeURIComponent($env.API_KEY || '');\n  let qs = 'api_key=' + apiKey + '&campaign=3z';\n  const sq = out.search_query;\n  const keys = Object.keys(sq);\n  for (let i=0; i<keys.length; i++) {\n    qs += '&query[' + keys[i] + ']=' + encodeURIComponent(sq[keys[i]]);\n  }\n  out.search_url = BASE + '/participants/search?' + qs;\n}\n\nreturn [{ json: out }];\n"
+      },
+      "id": "33a63dad-7b85-4358-94be-53367458e5a8",
+      "name": "Decidir",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        35152,
+        4112
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "618ec0eb-942a-45bb-a30d-3ac631daf995",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "responder",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "responder"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "28547685-316d-4b78-8fe6-0b33f679103b",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "buscar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "buscar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "61ee2fab-89f6-4702-bb66-7b216f3cb8ab",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "registrar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "registrar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b11c3c16-15c8-416f-8aa0-989be4ad04a5",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "foto",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "foto"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "c6063997-4ce7-4e03-b1cd-86fed1bf458a",
+      "name": "Router Acción",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        35360,
+        4112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// SL Buscar — replica EXACTA del metodo que dio 200 en la A2.\nconst helpers = this.helpers;\nconst API_KEY = $env.API_KEY;\nconst BASE = 'https://api.superlikerslabs.com/v1';\nconst d = $('Decidir').item.json;\nconst sq = d.search_query || {};\nconst opt = {\n  method: 'GET',\n  url: BASE + '/participants/search',\n  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + API_KEY },\n  qs: { campaign: '3z', api_key: API_KEY, query: sq },\n  json: true, returnFullResponse: true, ignoreHttpStatusErrors: true, timeout: 20000\n};\nlet status = null, body = null, err = null;\ntry {\n  const res = await helpers.httpRequest(opt);\n  status = res.statusCode; body = res.body;\n} catch (e) {\n  const r = e.response || {};\n  status = e.statusCode || r.statusCode || null;\n  body = r.body || r.data || null; err = e.message;\n}\nreturn [{ json: { status, body, err, search_query: sq } }];\n"
+      },
+      "id": "fe003fc1-75a3-409d-a641-92f223751252",
+      "name": "SL Buscar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        35584,
+        3984
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesa la respuesta de SL Buscar (status + body).\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nconst search_by = d.search_by;\nconst sl = $('SL Buscar').item.json || {};\nconst status = sl.status;\nlet resp = sl.body || {};\nlet participant = resp;\nif (resp && resp.object) participant = resp.object;\nelse if (resp && resp.participant) participant = resp.participant;\nelse if (resp && resp.data) participant = Array.isArray(resp.data) ? (resp.data[0]||{}) : resp.data;\nelse if (resp && Array.isArray(resp.participants)) participant = resp.participants[0] || {};\nelse if (Array.isArray(resp)) participant = resp[0] || {};\nconst found = status === 200 && !!(participant && (participant.email || participant.distinct_id || participant.points !== undefined || participant['nombre-completo']));\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nlet out = { action:'responder', wa_to: from, wa_payload: null, next_paso:'', patch:{}, celular: d.celular, had_row: d.had_row };\nif (found) {\n  const correo = participant.email || participant.distinct_id || (d.search_query && d.search_query.email) || '';\n  out.wa_payload = txt('¡Te encontramos! 🎉 Ya estás registrado en la campaña. Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.');\n  out.next_paso = 'esperando_foto';\n  out.patch = { paso:'esperando_foto', participante_existe: true, correo: correo, distinct_id: correo };\n} else if (search_by === 'cellphone') {\n  out.wa_payload = txt('¡Hola! 👋 Soy el asistente de la campaña. Para empezar y validar tu registro, escríbeme tu *correo electrónico*.');\n  out.next_paso = 'esperando_correo';\n  out.patch = { paso:'esperando_correo', participante_existe: false };\n} else {\n  out.wa_payload = txt('No encontré una cuenta con ese correo, así que vamos a registrarte. 📝 Escríbeme tu *nombre completo*.');\n  out.next_paso = 'esperando_nombre';\n  out.patch = { paso:'esperando_nombre', participante_existe: false };\n}\nreturn [{ json: out }];\n"
+      },
+      "id": "078e4614-8813-472d-b25b-a13cf95142f0",
+      "name": "Procesar Búsqueda",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        35808,
+        3984
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.superlikerslabs.com/v1/participants",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"api_key\": $env.API_KEY, \"campaign\": \"3z\", \"distinct_id\": $('Cargar Estado').item.json.correo, \"properties\": { \"nombre-completo\": $('Cargar Estado').item.json.nombre, \"cedula\": $('Cargar Estado').item.json.cedula, \"email\": $('Cargar Estado').item.json.correo, \"celular\": ($('Validar y Parsear').item.json.from || '').replace(/^57/, ''), \"ocupacion\": $('Cargar Estado').item.json.ocupacion, \"tags\": ($('Cargar Estado').item.json.tags || ['grupo_1']), \"pais\": \"CO\", \"password\": 'SL-' + Math.random().toString(36).slice(2,12) + 'x9', \"active\": true, \"verified_cellphone\": true, \"not_send_verify_registration\": true } } }}",
+        "options": {}
+      },
+      "id": "8fc41e01-97bc-45a1-9942-e040d3f6449b",
+      "name": "SL Registrar",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        35584,
+        4160
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Procesa la respuesta de POST /participants. Idempotente: duplicado se trata como exito.\nconst d = $('Decidir').item.json;\nconst from = d.wa_to;\nlet resp = {};\ntry { resp = $('SL Registrar').item.json || {}; } catch (e) { resp = {}; }\nconst blob = JSON.stringify(resp).toLowerCase();\nconst created = blob.indexOf('exitosamente') !== -1 || blob.indexOf('creado') !== -1 || !!resp.distinct_id || resp.success === true;\nconst dup = blob.indexOf('ya esta siendo usado') !== -1 || (blob.indexOf('code_error') !== -1 && blob.indexOf('21') !== -1);\nfunction txt(body){ return { messaging_product:'whatsapp', to: from, type:'text', text:{ body: body, preview_url:false } }; }\nlet out = { action:'responder', wa_to: from, wa_payload:null, next_paso:'', patch:{}, celular: d.celular, had_row: d.had_row };\nif (created || dup) {\n  out.wa_payload = txt('¡Listo, quedaste registrado! ✅ Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.');\n  out.next_paso = 'esperando_foto';\n  out.patch = { paso:'esperando_foto', participante_existe: true };\n} else {\n  out.wa_payload = txt('Tuve un problema registrándote. Verifica tus datos e inténtalo de nuevo: escríbeme tu *nombre completo*.');\n  out.next_paso = 'esperando_nombre';\n  out.patch = { paso:'esperando_nombre' };\n}\nreturn [{ json: out }];\n"
+      },
+      "id": "9128a541-6c49-4dde-aa8a-8c8a1ad9b715",
+      "name": "Procesar Registro",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        35808,
+        4160
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "bdde6dc8-8eba-49a1-b1d6-0ae9eafaa2fe",
+      "name": "Normalizar Salida",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        36048,
+        4112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://graph.facebook.com/v21.0/' + $('Validar y Parsear').item.json.phone_number_id + '/messages' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.wa_payload }}",
+        "options": {}
+      },
+      "id": "dd54e677-4766-4a36-9f6e-f972254e0fa3",
+      "name": "Enviar WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        36272,
+        3984
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HeBKKvsM1vy1xZ1A",
+          "name": "WhatsApp Cloud API - Reto SuperLikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Mezcla estado previo + patch -> registro final de columnas para conversation_state.\nconst p = $('Validar y Parsear').item.json;\nconst from = p.from || '';\nlet row = {};\ntry { row = $('Cargar Estado').item.json || {}; } catch (e) { row = {}; }\nconst hadRow = !!(row && row.celular);\nconst cur = $json || {};\nconst patch = cur.patch || {};\nconst nextPaso = patch.paso || cur.next_paso || row.paso || 'inicio';\nfunction pick(k, dflt){ return (patch[k] !== undefined) ? patch[k] : ((row[k] !== undefined && row[k] !== null) ? row[k] : dflt); }\nconst rec = {\n  celular: (from || '').replace(/^57/, ''),\n  paso: nextPaso,\n  distinct_id: pick('distinct_id', null),\n  nombre: pick('nombre', null),\n  correo: pick('correo', null),\n  cedula: pick('cedula', null),\n  ocupacion: pick('ocupacion', null),\n  tags: pick('tags', null),\n  participante_existe: pick('participante_existe', null),\n  id_actividad_foto: pick('id_actividad_foto', null),\n  datos: pick('datos', {}),\n  intentos: pick('intentos', 0),\n  last_activity_at: new Date().toISOString(),\n  had_row: hadRow,\n  wa_payload: cur.wa_payload\n};\nreturn [{ json: rec }];\n"
+      },
+      "id": "4e00df19-1efe-4ba5-92f2-2cbb70f20772",
+      "name": "Preparar Estado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        36272,
+        4240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "467ab1e4-276e-4df2-8cac-dc2a52e96420",
+              "leftValue": "={{ $json.had_row }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6bcb7fb7-71be-48ad-bb46-039c9d67d6c9",
+      "name": "¿Existía?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        36480,
+        4240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "={{ 'conversation_state' }}",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "={{ 'celular' }}",
+              "condition": "eq",
+              "keyValue": "={{ $json.celular }}"
+            }
+          ]
+        },
+        "dataToSend": "autoMapInputData",
+        "inputsToIgnore": "had_row,wa_payload"
+      },
+      "id": "3f8d8140-43df-4a65-ba41-7571f8fcc678",
+      "name": "Guardar Estado (update)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        36704,
+        4144
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mMeRwI2wAHHU1NtO",
+          "name": "Superlikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "={{ 'conversation_state' }}",
+        "dataToSend": "autoMapInputData",
+        "inputsToIgnore": "had_row,wa_payload"
+      },
+      "id": "46ada4bc-1525-4b8e-9b92-74aaba0728f8",
+      "name": "Crear Estado (insert)",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        36704,
+        4352
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mMeRwI2wAHHU1NtO",
+          "name": "Superlikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Verificacion (GET)\nMeta manda GET con hub.challenge + hub.verify_token.\nSe compara contra $env.WHATSAPP_VERIFY_TOKEN y se devuelve el challenge.",
+        "height": 260,
+        "width": 420,
+        "color": 4
+      },
+      "id": "94a8ba76-ad66-4084-8a4f-30d156e5a9ac",
+      "name": "Nota GET",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        33664,
+        3696
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Entrada + Firma (POST)\nValidar y Parsear: HMAC-SHA256 (X-Hub-Signature-256) + parseo de texto/boton/lista/imagen.\nAck 200 a Meta ANTES de procesar.",
+        "height": 300,
+        "width": 620,
+        "color": 5
+      },
+      "id": "f2a628d3-b545-4775-85a7-8a7c3bf0c57e",
+      "name": "Nota POST",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        33664,
+        4064
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Maquina de estados (A5)\nCargar Estado (Supabase, working memory) -> Decidir (tabla de transiciones en un solo Code) -> Router por accion.\nResponder | Buscar (celular->email fallback) | Registrar | Foto.\nConverge en Normalizar -> Enviar WhatsApp + persistir estado (update/insert).",
+        "height": 260,
+        "width": 900,
+        "color": 7
+      },
+      "id": "13244ba5-72c6-47c1-99a8-088a02042b31",
+      "name": "Nota Maquina",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        34928,
+        3760
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## A6 · Rama de foto (CONSTRUIDA)\nmedia -> Subir Foto (/photos) -> Leer Factura (OpenAI gpt-5.4-mini, Structured Outputs) -> Evaluar -> idempotencia -> /retail/buy + /entries/accept -> log transactions -> confirmar puntos.\nBordes: reintentar (descarga) / Sha1 / ilegible / ref duplicado / execution_error.",
+        "height": 240,
+        "width": 560,
+        "color": 3
+      },
+      "id": "0cd68112-59ee-4146-b7bd-76836cde3ab6",
+      "name": "Nota A6",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        35520,
+        4512
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Decidir').item.json.image_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "461770a0-9865-4d9b-a249-29987aa16c6d",
+      "name": "A6 · Media (URL)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        35600,
+        4688
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HeBKKvsM1vy1xZ1A",
+          "name": "WhatsApp Cloud API - Reto SuperLikers"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "fd07ab62-b052-4ad8-a700-61d32b9fadfe",
+      "name": "A6 · Descargar Media",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        35824,
+        4688
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HeBKKvsM1vy1xZ1A",
+          "name": "WhatsApp Cloud API - Reto SuperLikers"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// A6 · Prep IA v6 — gpt-5.4-mini + prompt mejorado para columnas de precio\nconst FACTURA_SYSTEM = \"Eres un asistente que extrae informacion de facturas/recibos de compra a partir de una imagen. Devuelve UNICAMENTE un objeto JSON valido, sin texto adicional, sin explicaciones y sin bloques de codigo markdown.\\\\n\\\\nEstructura exacta a devolver:\\\\n{\\\\n  \\\\\\\"legible\\\\\\\": true,\\\\n  \\\\\\\"ref\\\\\\\": \\\\\\\"<numero de factura>\\\\\\\",\\\\n  \\\\\\\"products\\\\\\\": [\\\\n    { \\\\\\\"ref\\\\\\\": \\\\\\\"<codigo o nombre>\\\\\\\", \\\\\\\"price\\\\\\\": \\\\\\\"<precio unitario>\\\\\\\", \\\\\\\"quantity\\\\\\\": \\\\\\\"<cantidad>\\\\\\\", \\\\\\\"line\\\\\\\": \\\\\\\"<linea>\\\\\\\", \\\\\\\"provider\\\\\\\": \\\\\\\"<proveedor>\\\\\\\" }\\\\n  ]\\\\n}\\\\n\\\\nReglas:\\\\n- ref = numero de la factura o recibo. Busca etiquetas como: Factura, No., Nro, N\\u00b0, Ticket, POS, Consecutivo, CUFE. Devuelvelo tal cual aparece.\\\\n- price = precio UNITARIO de cada producto (lo que cuesta UNA unidad). En facturas con columnas como [cantidad | precio_unitario | codigo | descripcion | total_linea], extrae la segunda columna numerica (precio unitario), NO el total de la linea ni el codigo de barras. Ignora separadores de miles (puntos o comas). Devuelve solo digitos y punto decimal si aplica.\\\\n- quantity = numero de unidades o peso. Solo el valor numerico, sin texto como 'UN', 'KG', 'Kg'.\\\\n- Solo si NO hay numero de factura visible, o la imagen no es una factura, devuelve legible=false con ref vacio y products vacio.\\\\n- line y provider: si no aparecen, usa string vacio. No inventes datos.\\\\n\";\nconst SCHEMA = { name:'factura', strict:true, schema:{\n  type:'object', additionalProperties:false,\n  properties:{\n    legible:{ type:'boolean' },\n    ref:{ type:'string' },\n    products:{ type:'array', items:{\n      type:'object', additionalProperties:false,\n      properties:{ ref:{type:'string'}, price:{type:'string'}, quantity:{type:'string'}, line:{type:'string'}, provider:{type:'string'} },\n      required:['ref','price','quantity','line','provider'] } }\n  },\n  required:['legible','ref','products'] } };\n\nconst d = $('Decidir').first().json;\nlet media_ok = true, b64 = '', mime = 'image/jpeg';\ntry {\n  const buf = await this.helpers.getBinaryDataBuffer(0, 'data');\n  if (!buf || !buf.length) { media_ok = false; } else { b64 = buf.toString('base64'); }\n  const bmeta = $input.item.binary && $input.item.binary.data;\n  if (bmeta && bmeta.mimeType) mime = bmeta.mimeType;\n} catch (e) { media_ok = false; }\n\nlet openai_body = null;\nif (media_ok) {\n  openai_body = {\n    model: 'gpt-5.4-mini',\n    response_format: { type:'json_schema', json_schema: SCHEMA },\n    messages: [\n      { role:'system', content: FACTURA_SYSTEM },\n      { role:'user', content: [\n        { type:'text', text:'Extrae los datos de esta factura. Presta especial atencion al numero de factura (ref) y al precio UNITARIO de cada producto (no el total de la linea).' },\n        { type:'image_url', image_url:{ url:'data:'+mime+';base64,'+b64 } }\n      ]}\n    ]\n  };\n}\nconst out = {\n  media_ok, mime, openai_body,\n  correo: ($('Cargar Estado').first().json.correo) || '',\n  celular: d.celular, celular10: d.celular10, wa_to: d.wa_to, had_row: d.had_row\n};\nreturn [{ json: out, binary: $input.item.binary }];\n"
+      },
+      "id": "b72b4a6b-58b5-4b2b-95d6-989f5bb39386",
+      "name": "A6 · Prep IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        36048,
+        4688
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.superlikerslabs.com/v1/photos",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $env.API_KEY }}"
+            },
+            {
+              "name": "campaign",
+              "value": "3z"
+            },
+            {
+              "name": "distinct_id",
+              "value": "={{ $('Cargar Estado').item.json.correo }}"
+            },
+            {
+              "name": "title",
+              "value": "Ticket de compra"
+            },
+            {
+              "name": "category",
+              "value": "tickets"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "upload_photo",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "2ec52efe-7864-47dc-8c22-6744c75b7e75",
+      "name": "A6 · Subir Foto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        36256,
+        4688
+      ],
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('A6 · Prep IA').item.json.openai_body }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "38138fda-5bbc-4c39-ab66-c9029b79fce7",
+      "name": "A6 · Leer Factura (IA)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        36480,
+        4688
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "4lChq1RRvpyjgJLd",
+          "name": "OpenAI"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// A6 · Evaluar Lectura\nconst photosRaw = $('A6 · Subir Foto').first().json || {};\nlet photos = photosRaw;\nif (typeof photosRaw.data === 'string') { try { photos = JSON.parse(photosRaw.data); } catch(e){ photos = photosRaw; } }\nconst prep = $('A6 · Prep IA').first().json || {};\nconst ai  = $('A6 · Leer Factura (IA)').first().json || {};\n\nconst photoObj = photos.object || photos;\nlet id_actividad_foto =\n  photoObj.id || photoObj._id || photoObj.entry_id ||\n  photoObj.activity_id || photoObj.entry || photoObj.photo_id || '';\nif (!id_actividad_foto && photos.image_url) {\n  const m = (photos.image_url || '').match(/upload-photo\\/([a-f0-9]{24})\\//i);\n  if (m) id_actividad_foto = m[1];\n}\n\nconst photosBlob = JSON.stringify(photosRaw).toLowerCase();\nconst sha1_dup   = photosBlob.indexOf('sha1') !== -1 && photosBlob.indexOf('taken') !== -1;\nconst media_ok   = prep.media_ok !== false;\n\nlet parsed = { legible:false, ref:'', products:[] };\ntry {\n  const content = (((ai.choices||[])[0]||{}).message||{}).content || '';\n  parsed = JSON.parse(content);\n} catch(e) { parsed = { legible:false, ref:'', products:[] }; }\n\nconst ref_raw  = (parsed.ref || '').toString().trim();\nconst ref_norm = ref_raw.replace(/\\D/g, '') || ref_raw.replace(/\\s+/g,'').toUpperCase();\nconst ref      = ref_norm;\n\nconst products = Array.isArray(parsed.products) ? parsed.products : [];\nconst legible  = parsed.legible === true && ref !== '' && products.length > 0;\n\nlet outcome;\nif (!media_ok)    outcome = 'reintentar';\nelse if (sha1_dup) outcome = 'foto_duplicada';\nelse if (!legible) outcome = 'ilegible';\nelse               outcome = 'comprar';\n\nreturn [{ json: { outcome, id_actividad_foto, ref, ref_raw, products,\n  image_url: (photos.image_url||''),\n  correo: prep.correo, celular: prep.celular, celular10: prep.celular10,\n  wa_to: prep.wa_to, had_row: prep.had_row } }];\n"
+      },
+      "id": "aa9a7ecd-ec3a-49cb-99e8-e50b11c3a62b",
+      "name": "A6 · Evaluar Lectura",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        36704,
+        4688
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "739023fc-0cc4-423e-ba6a-7b2cd92334cd",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "reintentar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reintentar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "10fab079-a69f-4e71-9393-d72013081d46",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "foto_duplicada",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "foto_duplicada"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bd2d1a06-b887-4ddc-924b-a717686f281f",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "ilegible",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ilegible"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6d5c2335-811e-4e81-9a54-5feff18b0f83",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "comprar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "comprar"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      },
+      "id": "77b13dc0-fbca-409f-ad87-d396c148fab5",
+      "name": "A6 · Outcome",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        36928,
+        4688
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "transactions",
+        "limit": 1,
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ref_factura",
+              "condition": "eq",
+              "keyValue": "={{ $('A6 · Evaluar Lectura').item.json.ref }}"
+            },
+            {
+              "keyName": "estado",
+              "condition": "eq",
+              "keyValue": "completada"
+            }
+          ]
+        }
+      },
+      "id": "8b48b3b2-7dbe-4472-972c-e34c2b400814",
+      "name": "A6 · Idempotencia",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        37136,
+        4640
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "mMeRwI2wAHHU1NtO",
+          "name": "Superlikers"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9342caf3-d863-470c-8489-71319deb2e15",
+              "leftValue": "={{ $json.ref_factura }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4fcf5544-31c7-42e7-a431-ed9d3d87dcef",
+      "name": "A6 · ¿Ref ya registrada?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        37360,
+        4640
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// A6 · Comprar + Aceptar — POST /retail/buy + POST /entries/accept\nconst helpers = this.helpers;\nconst API_KEY = $env.API_KEY;\nconst BASE = 'https://api.superlikerslabs.com/v1';\nconst ev = $('A6 · Evaluar Lectura').first().json;\nconst correo = $('Cargar Estado').first().json.correo;\nconst ref = ev.ref, products = ev.products, id_actividad_foto = ev.id_actividad_foto;\n\nlet buyStatus=null, buyBody=null, points=0, buyErr=null;\ntry {\n  const r = await helpers.httpRequest({ method:'POST', url:BASE+'/retail/buy',\n    headers:{ 'Authorization':'Bearer '+API_KEY, 'Content-Type':'application/json' },\n    body:{ api_key:API_KEY, campaign:'3z', distinct_id:correo, ref:ref, products:products },\n    json:true, returnFullResponse:true, ignoreHttpStatusErrors:true, timeout:30000 });\n  buyStatus=r.statusCode; buyBody=r.body;\n  const bobj = (buyBody && buyBody.object) ? buyBody.object : (buyBody||{});\n  if (bobj && bobj.invoice && bobj.invoice.points != null) points = bobj.invoice.points;\n  else if (bobj && bobj.points != null) points = bobj.points;\n} catch (e) { buyErr = e.message; }\n\nconst buy_ok = buyStatus >= 200 && buyStatus < 300;\n\nlet accStatus=null, accBody=null, execution_error=false, accErr=null;\nif (buy_ok) {\n  try {\n    const r2 = await helpers.httpRequest({ method:'POST', url:BASE+'/entries/accept',\n      headers:{ 'Authorization':'Bearer '+API_KEY, 'Content-Type':'application/json' },\n      body:{ api_key:API_KEY, campaign:'3z', id:id_actividad_foto },\n      json:true, returnFullResponse:true, ignoreHttpStatusErrors:true, timeout:30000 });\n    accStatus=r2.statusCode; accBody=r2.body;\n    const ablob = JSON.stringify(accBody||{}).toLowerCase();\n    execution_error = ablob.indexOf('execution_error') !== -1;\n  } catch (e) { accErr = e.message; execution_error = true; }\n} else {\n  execution_error = false;\n}\n\nreturn [{ json: { points: Number(points)||0, execution_error, buy_ok, ref, id_actividad_foto, correo,\n  celular: ev.celular, celular10: ev.celular10, wa_to: ev.wa_to, had_row: ev.had_row,\n  buyStatus, accStatus, buyErr, accErr,\n  buyBody: buyBody, accBody: accBody,\n  buy_products_enviados: products } }];\n"
+      },
+      "id": "e03a5bc1-784f-4109-9b2d-c37bc2ce01a4",
+      "name": "A6 · Comprar + Aceptar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        37584,
+        4688
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "42b66525-32cd-42b3-b8c2-39b5a540118d",
+              "leftValue": "={{ $json.execution_error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "1798b1c8-36c2-433e-9d52-62c09b89adfa",
+      "name": "A6 · ¿Accept OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        37808,
+        4688
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $('A6 · Comprar + Aceptar').first().json;\nconst from = r.wa_to;\nconst correo = $('Cargar Estado').first().json.correo || '';\nconst pts = r.points || 0;\nfunction txt(b){ return { messaging_product:'whatsapp', to:from, type:'text', text:{ body:b, preview_url:false } }; }\nreturn [{ json: { action:'responder', wa_to:from,\n  wa_payload: txt('🎉 ¡Listo! Tu factura fue registrada y ganaste ' + pts + ' puntos. Ya están en tu cuenta.\\n\\n¿Qué tan fácil te resultó? Calíficame del 1 al 5 (solo el número). 🙏'),\n  next_paso:'esperando_csat', patch:{ paso:'esperando_csat', id_actividad_foto: r.id_actividad_foto },\n  celular: r.celular, had_row: r.had_row,\n  tx:{ celular: r.celular10, correo: correo, ref_factura: r.ref, puntos: pts, estado:'completada', id_actividad_foto: r.id_actividad_foto, error_type: null } } }];\n"
+      },
+      "id": "19b4d28e-fa9a-4522-91f9-9e590f691f2d",
+      "name": "A6 · Msg Completada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        38016,
+        4624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $('A6 · Comprar + Aceptar').first().json;\nconst from = r.wa_to;\nconst correo = $('Cargar Estado').first().json.correo || '';\nfunction txt(b){ return { messaging_product:'whatsapp', to:from, type:'text', text:{ body:b, preview_url:false } }; }\nconst outcome = r.buy_ok ? 'revision_manual' : 'ya_registrada';\nconst msg = r.buy_ok\n  ? 'Recibí tu factura y registré la compra ✅, pero la aprobación final quedó en revisión manual. Te confirmamos los puntos muy pronto. 🙏'\n  : 'Esta factura ya había sido registrada antes 🧾, así que no genera puntos nuevos. Si tienes otra compra, envíame su foto.';\nreturn [{ json: { action:'responder', wa_to:from,\n  wa_payload: txt(msg),\n  next_paso: outcome === 'ya_registrada' ? 'esperando_foto' : 'revision_manual',\n  patch:{ paso: outcome === 'ya_registrada' ? 'esperando_foto' : 'revision_manual', id_actividad_foto: r.id_actividad_foto },\n  celular: r.celular, had_row: r.had_row,\n  tx:{ celular: r.celular10, correo: correo, ref_factura: r.ref, puntos: r.points || 0, estado:'error', id_actividad_foto: r.id_actividad_foto, error_type: outcome === 'ya_registrada' ? 'ref_duplicado' : 'execution_error' } } }];\n"
+      },
+      "id": "32722b64-60a8-468a-93df-18fe13c60234",
+      "name": "A6 · Msg Revisión",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        38016,
+        4784
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ev = $('A6 · Evaluar Lectura').first().json;\nconst from = ev.wa_to;\nconst correo = $('Cargar Estado').first().json.correo || '';\nfunction txt(b){ return { messaging_product:'whatsapp', to:from, type:'text', text:{ body:b, preview_url:false } }; }\nreturn [{ json: { action:'responder', wa_to:from,\n  wa_payload: txt('Esta factura (' + ev.ref + ') ya generó puntos antes, no puedo registrarla de nuevo. Si tienes otra compra, envíame su foto. 🧾'),\n  next_paso:'esperando_foto', patch:{ paso:'esperando_foto' },\n  celular: ev.celular, had_row: ev.had_row,\n  tx:{ celular: ev.celular10, correo: correo, ref_factura: ev.ref, puntos: 0, estado:'duplicada', id_actividad_foto: ev.id_actividad_foto || null, error_type:'ref_duplicado' } } }];\n"
+      },
+      "id": "923dfc1e-a8eb-4351-add0-e4168d3e9325",
+      "name": "A6 · Msg Duplicada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        37584,
+        4880
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ev = $('A6 · Evaluar Lectura').first().json;\nconst from = ev.wa_to;\nconst correo = $('Cargar Estado').first().json.correo || '';\nfunction txt(b){ return { messaging_product:'whatsapp', to:from, type:'text', text:{ body:b, preview_url:false } }; }\nconst intentos = (($('Cargar Estado').first().json.intentos)||0) + 1;\nreturn [{ json: { action:'responder', wa_to:from,\n  wa_payload: txt('No pude leer bien la factura 😕. Asegúrate de que se vea completa, con buena luz y sin reflejos, y que se note el número de factura. Envíame otra foto.'),\n  next_paso:'esperando_foto', patch:{ paso:'esperando_foto', intentos:intentos },\n  celular: ev.celular, had_row: ev.had_row,\n  tx:{ celular: ev.celular10, correo: correo, ref_factura: null, puntos: 0, estado:'error', id_actividad_foto: ev.id_actividad_foto || null, error_type:'factura_ilegible' } } }];\n"
+      },
+      "id": "fbb9078b-afd7-4cdf-82c5-62c233574f16",
+      "name": "A6 · Msg Ilegible",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        37136,
+        4880
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ev = $('A6 · Evaluar Lectura').first().json;\nconst from = ev.wa_to;\nconst correo = $('Cargar Estado').first().json.correo || '';\nfunction txt(b){ return { messaging_product:'whatsapp', to:from, type:'text', text:{ body:b, preview_url:false } }; }\nreturn [{ json: { action:'responder', wa_to:from,\n  wa_payload: txt('Esta foto ya fue registrada antes 🧾. Si tienes otra factura, envíame su foto.'),\n  next_paso:'esperando_foto', patch:{ paso:'esperando_foto' },\n  celular: ev.celular, had_row: ev.had_row,\n  tx:{ celular: ev.celular10, correo: correo, ref_factura: null, puntos: 0, estado:'duplicada', id_actividad_foto: ev.id_actividad_foto || null, error_type:'sha1_duplicado' } } }];\n"
+      },
+      "id": "62f13310-fd17-477e-80b4-314a2dec8409",
+      "name": "A6 · Msg Foto Duplicada",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        37136,
+        5024
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ev = $('A6 · Evaluar Lectura').first().json;\nconst from = ev.wa_to;\nfunction txt(b){ return { messaging_product:'whatsapp', to:from, type:'text', text:{ body:b, preview_url:false } }; }\nconst intentos = (($('Cargar Estado').first().json.intentos)||0) + 1;\nreturn [{ json: { action:'responder', wa_to:from,\n  wa_payload: txt('No pude descargar tu foto 😔. ¿Me la reenvías, por favor? 📸'),\n  next_paso:'esperando_foto', patch:{ paso:'esperando_foto', intentos:intentos },\n  celular: ev.celular, had_row: ev.had_row } }];\n"
+      },
+      "id": "caf720ca-c2bf-422f-a3b2-8a376b6e89c8",
+      "name": "A6 · Msg Reintentar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        37136,
+        5168
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "f6cdf59d-8909-4e5c-a479-fc0a954d7b3b",
+      "name": "A6 · Converge",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        38272,
+        4768
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "transactions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "celular",
+              "fieldValue": "={{ $json.tx.celular }}"
+            },
+            {
+              "fieldId": "correo",
+              "fieldValue": "={{ $json.tx.correo }}"
+            },
+            {
+              "fieldId": "ref_factura",
+              "fieldValue": "={{ $json.tx.ref_factura }}"
+            },
+            {
+              "fieldId": "puntos",
+              "fieldValue": "={{ $json.tx.puntos }}"
+            },
+            {
+              "fieldId": "estado",
+              "fieldValue": "={{ $json.tx.estado }}"
+            },
+            {
+              "fieldId": "id_actividad_foto",
+              "fieldValue": "={{ $json.tx.id_actividad_foto }}"
+            },
+            {
+              "fieldId": "error_type",
+              "fieldValue": "={{ $json.tx.error_type }}"
+            }
+          ]
+        }
+      },
+      "id": "73c504cf-5267-41e2-a150-b85118fea897",
+      "name": "A6 · Log Transaction",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        38496,
+        4688
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mMeRwI2wAHHU1NtO",
+          "name": "Superlikers"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook Verify (GET)": {
+      "main": [
+        [
+          {
+            "node": "Token Correcto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token Correcto?": {
+      "main": [
+        [
+          {
+            "node": "Responder Challenge",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar GET 403",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Recibe (POST)": {
+      "main": [
+        [
+          {
+            "node": "Validar y Parsear",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar y Parsear": {
+      "main": [
+        [
+          {
+            "node": "Firma Valida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Firma Valida?": {
+      "main": [
+        [
+          {
+            "node": "Es Mensaje?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar Firma 403",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es Mensaje?": {
+      "main": [
+        [
+          {
+            "node": "Responder 200 OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ack 200 (estado)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder 200 OK": {
+      "main": [
+        [
+          {
+            "node": "Cargar Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cargar Estado": {
+      "main": [
+        [
+          {
+            "node": "Decidir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decidir": {
+      "main": [
+        [
+          {
+            "node": "Router Acción",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router Acción": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Salida",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SL Buscar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "SL Registrar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "A6 · Media (URL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SL Buscar": {
+      "main": [
+        [
+          {
+            "node": "Procesar Búsqueda",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Búsqueda": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Salida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SL Registrar": {
+      "main": [
+        [
+          {
+            "node": "Procesar Registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Registro": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Salida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar Salida": {
+      "main": [
+        [
+          {
+            "node": "Enviar WhatsApp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Preparar Estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Estado": {
+      "main": [
+        [
+          {
+            "node": "¿Existía?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Existía?": {
+      "main": [
+        [
+          {
+            "node": "Guardar Estado (update)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Crear Estado (insert)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Media (URL)": {
+      "main": [
+        [
+          {
+            "node": "A6 · Descargar Media",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Descargar Media": {
+      "main": [
+        [
+          {
+            "node": "A6 · Prep IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Prep IA": {
+      "main": [
+        [
+          {
+            "node": "A6 · Subir Foto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Subir Foto": {
+      "main": [
+        [
+          {
+            "node": "A6 · Leer Factura (IA)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Leer Factura (IA)": {
+      "main": [
+        [
+          {
+            "node": "A6 · Evaluar Lectura",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Evaluar Lectura": {
+      "main": [
+        [
+          {
+            "node": "A6 · Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Outcome": {
+      "main": [
+        [
+          {
+            "node": "A6 · Msg Reintentar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "A6 · Msg Foto Duplicada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "A6 · Msg Ilegible",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "A6 · Idempotencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Idempotencia": {
+      "main": [
+        [
+          {
+            "node": "A6 · ¿Ref ya registrada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · ¿Ref ya registrada?": {
+      "main": [
+        [
+          {
+            "node": "A6 · Msg Duplicada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "A6 · Comprar + Aceptar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Comprar + Aceptar": {
+      "main": [
+        [
+          {
+            "node": "A6 · ¿Accept OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · ¿Accept OK?": {
+      "main": [
+        [
+          {
+            "node": "A6 · Msg Completada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "A6 · Msg Revisión",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Msg Reintentar": {
+      "main": [
+        [
+          {
+            "node": "Normalizar Salida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Msg Foto Duplicada": {
+      "main": [
+        [
+          {
+            "node": "A6 · Converge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Msg Ilegible": {
+      "main": [
+        [
+          {
+            "node": "A6 · Converge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Msg Duplicada": {
+      "main": [
+        [
+          {
+            "node": "A6 · Converge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Msg Completada": {
+      "main": [
+        [
+          {
+            "node": "A6 · Converge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Msg Revisión": {
+      "main": [
+        [
+          {
+            "node": "A6 · Converge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "A6 · Converge": {
+      "main": [
+        [
+          {
+            "node": "A6 · Log Transaction",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Normalizar Salida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "53a31ebd-f2cb-4d16-9703-db55f656fdad",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c6a0f9354bcd0da44397209ccd0f14d2b8438d71a6cd4b99d332f0b62dd6868f"
+  },
+  "id": "hMUrIGCkq3qmUrA2",
+  "tags": []
+}
