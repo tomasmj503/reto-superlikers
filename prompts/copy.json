@@ -1,0 +1,34 @@
+{
+  "saludo_pide_correo": "¡Hola! 👋 Soy el asistente de la campaña. Para empezar y validar tu registro, escríbeme tu *correo electrónico*.",
+  "correo_invalido": "Ese correo no parece válido. Escríbeme tu correo, por favor (ejemplo: nombre@correo.com).",
+  "encontrado": "¡Te encontramos! 🎉 Ya estás registrado en la campaña. Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.",
+  "no_encontrado_registrar": "No encontré una cuenta con ese correo, así que vamos a registrarte. 📝 Escríbeme tu *nombre completo*.",
+  "pedir_nombre_vacio": "Necesito tu nombre completo para continuar. Escríbelo, por favor.",
+  "pedir_cedula": "Gracias. Ahora escríbeme tu número de cédula (solo números).",
+  "cedula_invalida": "La cédula debe ser numérica. Escríbela de nuevo, por favor.",
+  "pedir_ocupacion": "¿Cuál es tu ocupación? Elige una opción.",
+  "ocupacion_invalida": "Elige tu ocupación de la lista, por favor.",
+  "resumen": "Confirmemos tus datos:\n\nNombre: {nombre}\nCédula: {cedula}\nCorreo: {correo}\nCelular: {celular}\n\n¿Es correcto?",
+  "confirmar_pregunta": "¿Confirmas tus datos?",
+  "registro_cancelado": "Sin problema, empecemos de nuevo. Escríbeme tu nombre completo.",
+  "registrado_ok": "¡Listo, quedaste registrado! ✅ Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.",
+  "registro_error": "Tuve un problema registrándote. Verifica tus datos e inténtalo de nuevo: escríbeme tu *nombre completo*.",
+  "pedir_foto": "Por favor envíame la *foto* de tu factura para registrar tu compra y ganar puntos.",
+  "foto_recibida": "¡Recibí tu foto! 📸 Estoy procesando tu factura. (La lectura con IA + registro de venta + aceptación se completan en la Actividad 6.)",
+  "pedir_csat": "Calíficanos del 1 al 5, por favor (solo el número).",
+  "csat_gracias": "¡Gracias por tu calificación! 🙏 Cuando quieras registrar otro ticket, envíame la foto.",
+  "otro_ticket": "¿Quieres registrar otro ticket? Envíame la foto de la factura cuando quieras. 📸",
+  "procesando": "Dame un segundo, estoy procesando tu solicitud… ⏳",
+  "labels": {
+    "ocupacion": [
+      "Ocupación 1",
+      "Ocupación 2",
+      "Ocupación 3",
+      "Ocupación 4"
+    ],
+    "confirmar_si": "Sí, registrar",
+    "confirmar_no": "No, corregir",
+    "boton_lista": "Elegir",
+    "seccion_opciones": "Opciones"
+  }
+}
