@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Entorno / secretos — NUNCA en el repo
+.env
+.env.local
+.env.*.local
+*.env
+
+# n8n
+.n8n/
+n8n-data/
+
+# Compilación
+.next/
+out/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDEs
+.idea/
+.vscode/
+*.swp
