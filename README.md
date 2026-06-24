@@ -44,7 +44,7 @@ WhatsApp Cloud API (Meta)
 |------|-----------|
 | Orquestación | n8n (self-hosted en DigitalOcean) |
 | Canal | WhatsApp Business Cloud API (Meta) |
-| IA — factura | OpenAI Structured Outputs (`json_schema` estricto) |
+| IA — factura | OpenAI `gpt-5.4-mini` · Structured Outputs (`json_schema` estricto) |
 | Estado + log | Supabase (PostgreSQL + RLS) |
 | Dashboard | Next.js + Supabase → Vercel |
 | Infraestructura | DigitalOcean Droplet + Docker + Caddy |
@@ -58,7 +58,7 @@ WhatsApp Cloud API (Meta)
 ├─ .gitignore
 ├─ .env.example              ← solo nombres de variables, sin valores
 ├─ workflows/
-│   └─ superlikers_flujo_completo.json   ← export del workflow n8n (pendiente A8)
+│   └─ superlikers_flujo_completo.json   ← export del workflow n8n (flujo completo, A6 incluida)
 ├─ prompts/
 │   ├─ copy.json             ← copy del bot por paso (fuente de verdad)
 │   ├─ factura_system.txt    ← system prompt para la IA de lectura de factura
@@ -69,7 +69,8 @@ WhatsApp Cloud API (Meta)
         ├─ A2.md             ← Sondeo de endpoints (hallazgos empíricos)
         ├─ A3.md             ← Schema Supabase
         ├─ A4.md             ← WhatsApp Webhook
-        └─ A5.md             ← State Machine y bugs resueltos
+        ├─ A5.md             ← State Machine y bugs resueltos
+        └─ A6.md             ← Rama de foto: lectura IA, venta, aceptación
 ```
 
 ---
@@ -80,7 +81,8 @@ Cada actividad tiene su nota en [`docs/decisiones/`](docs/decisiones/). Resumen 
 
 - **IA con garantía de JSON:** OpenAI en modo `json_schema` estricto. Si el esquema no se cumple, la API reintenta internamente. Elimina la clase de error "el modelo devolvió algo que no es JSON".
 - **Copy versionado:** todos los textos del bot viven en `prompts/copy.json`, separados de la lógica del workflow.
-- **Idempotencia en dos capas:** chequeo en aplicación + índice único parcial `uq_transactions_ref_completada` (`ref_factura WHERE estado='completada'`). Físicamente imposible otorgar puntos dos veces por la misma factura.
+- **Modelo elegido por pruebas, no por intuición:** se arrancó en `gpt-5.4-nano` (el más barato); fallaba al leer precios en facturas de columnas densas. Se corrigió primero el *prompt* (gratis) y, como persistía, se subió a `gpt-5.4-mini` — que leyó correctamente. No se usó el modelo full: la lectura de factura es extracción, no razonamiento. Regla aplicada: el modelo más barato que cumple. Detalle en [`docs/decisiones/A6.md`](docs/decisiones/A6.md).
+- **Idempotencia en tres capas:** (1) normalización del `ref` a solo dígitos antes de comparar — el OCR lee la misma factura distinto en cada foto; (2) chequeo en aplicación contra `transactions`; (3) el índice único parcial `uq_transactions_ref_completada` + el rechazo del propio SuperLikers (`/retail/buy` → 422). Físicamente imposible otorgar puntos dos veces por la misma factura.
 - **RLS desde el día 1:** `service_role` (n8n) tiene ALL; `authenticated` (dashboard) tiene SELECT; `anon` denegado. No se habilitó retroactivamente.
 - **Búsqueda por email, no por celular:** el API de `3z` solo resuelve `GET /participants/search` por `email`. El celular llega del `from` de WhatsApp y se usa como llave de `conversation_state` (normalizado a 10 dígitos).
 - **State machine centralizada:** un solo nodo Code (`Decidir`) contiene todas las transiciones. El Switch enruta por tipo de acción, no por estado. Menos nodos, una sola fuente de verdad.
@@ -125,10 +127,10 @@ En n8n self-hosted, estas variables se declaran en `.env` y `docker-compose.yml`
 
 | # | Caso | Estado |
 |---|------|--------|
-| 1 | Usuario nuevo → registro + foto + venta + aceptación | pendiente A6 |
+| 1 | Usuario nuevo → registro + foto + venta + aceptación | ✅ validado (11.600 pts, buy 200, accept 200) |
 | 2 | Usuario existente → salta registro, sube ticket directo | identificación validada en A5 |
-| 3 | Factura ilegible → el bot pide nueva foto | pendiente A6 |
-| 4 | Foto o factura duplicada → mensajes de error correctos | pendiente A7 |
+| 3 | Factura ilegible → el bot pide nueva foto | ✅ validado |
+| 4 | Foto o factura duplicada → mensajes de error correctos | ✅ ref duplicado validado · Sha1/timeout en A7 |
 
 ---
 

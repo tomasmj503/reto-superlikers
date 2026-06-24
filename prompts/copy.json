@@ -14,7 +14,7 @@
   "registrado_ok": "¡Listo, quedaste registrado! ✅ Ahora envíame la *foto* de tu factura para registrar tu compra y ganar puntos.",
   "registro_error": "Tuve un problema registrándote. Verifica tus datos e inténtalo de nuevo: escríbeme tu *nombre completo*.",
   "pedir_foto": "Por favor envíame la *foto* de tu factura para registrar tu compra y ganar puntos.",
-  "foto_recibida": "¡Recibí tu foto! 📸 Estoy procesando tu factura. (La lectura con IA + registro de venta + aceptación se completan en la Actividad 6.)",
+  "foto_recibida": "¡Recibí tu foto! 📸 Estoy procesando tu factura, dame un momento...",
   "pedir_csat": "Calíficanos del 1 al 5, por favor (solo el número).",
   "csat_gracias": "¡Gracias por tu calificación! 🙏 Cuando quieras registrar otro ticket, envíame la foto.",
   "otro_ticket": "¿Quieres registrar otro ticket? Envíame la foto de la factura cuando quieras. 📸",
@@ -30,5 +30,15 @@
     "confirmar_no": "No, corregir",
     "boton_lista": "Elegir",
     "seccion_opciones": "Opciones"
+  },
+  "a6": {
+    "_comment": "Textos de la rama de foto (A6). Reflejados en los nodos Code de A6 en el workflow.",
+    "foto_descarga_error": "No pude descargar tu foto 😔. ¿Me la reenvías, por favor? 📸",
+    "foto_duplicada": "Esta foto ya fue registrada antes 🧾. Si tienes otra factura, envíame su foto.",
+    "factura_ilegible": "No pude leer bien la factura 😕. Asegúrate de que se vea completa, con buena luz y sin reflejos, y que se note el número de factura. Envíame otra foto.",
+    "factura_ya_registrada": "Esta factura ya había sido registrada antes 🧾, así que no genera puntos nuevos. Si tienes otra compra, envíame su foto.",
+    "ref_duplicado": "Esta factura ({ref}) ya generó puntos antes, no puedo registrarla de nuevo. Si tienes otra compra, envíame su foto. 🧾",
+    "puntos_confirmados": "🎉 ¡Listo! Tu factura fue registrada y ganaste {puntos} puntos. Ya están en tu cuenta.\n\n¿Qué tan fácil te resultó? Calíficame del 1 al 5 (solo el número). 🙏",
+    "revision_manual": "Recibí tu factura y registré la compra ✅, pero la aprobación final quedó en revisión manual. Te confirmamos los puntos muy pronto. 🙏"
   }
 }
