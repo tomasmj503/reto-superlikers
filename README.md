@@ -166,3 +166,12 @@ cp .env.example .env
 - **Retention rate real:** tabla `transactions` y queries preparadas. Requiere datos longitudinales.
 - **Job diferido por conversación:** el polling actual es robusto; el job diferido sería más preciso (recordatorio exactamente a los 30 min). Trade-off documentado en `docs/decisiones/A7.md`.
 - **Migración a observabilidad completa:** integrar APM (Sentry, Datadog) para trazas distribuidas.
+
+---
+
+## Video Loom
+
+Demostración del flujo corriendo en vivo con casos reales (registro,
+foto + puntos, y casos borde):
+
+https://www.loom.com/share/0cc0632a0fe6495cac309569be01718e
