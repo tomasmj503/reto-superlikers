@@ -6,7 +6,7 @@ Bot conversacional de WhatsApp que guía al usuario por el flujo completo de reg
 
 ## Objetivo
 
-Orquestar en n8n un flujo de 8 pasos sobre WhatsApp Cloud API que:
+Orquestar en n8n un flujo de 7 pasos sobre WhatsApp Cloud API que:
 
 1. Identifica al participante por celular (y correo como fallback) en `GET /participants/search`.
 2. Lo registra en `POST /participants` si no existe, con confirmación previa de datos.
@@ -58,26 +58,26 @@ WhatsApp Cloud API (Meta)
 ## Estructura del repositorio
 
 ```
-── README.md
-── .gitignore
-── .env.example                          — solo nombres de variables, sin valores
-── workflows/
+├── README.md
+├── .gitignore
+├── .env.example                          — solo nombres de variables, sin valores
+├── workflows/
 │   └── superlikers_flujo_completo.json   — export del workflow n8n (v8, 62 nodos, A8c)
-── supabase/
+├── supabase/
 │   └── schema.sql                        — tablas, constraints, RLS e índice de idempotencia
-── prompts/
-│   ── copy.json                         — copy del bot por paso (fuente de verdad)
-│   ── factura_system.txt                — system prompt para la IA de factura
+├── prompts/
+│   ├── copy.json                         — copy del bot por paso (fuente de verdad)
+│   ├── factura_system.txt                — system prompt para la IA de factura
 │   └── README.md                         — convención de llaves y cómo actualizar
 └── docs/
     └── decisiones/
-        ── A1.md    — Plan y decisiones iniciales
-        ── A2.md    — Sondeo de endpoints (hallazgos empíricos)
-        ── A3.md    — Schema Supabase
-        ── A4.md    — WhatsApp Webhook
-        ── A5.md    — State Machine y bugs resueltos
-        ── A6.md    — Rama de foto + IA + idempotencia
-        ── A7.md    — Casos borde + timeouts + reintentos
+        ├── A1.md    — Plan y decisiones iniciales
+        ├── A2.md    — Sondeo de endpoints (hallazgos empíricos)
+        ├── A3.md    — Schema Supabase
+        ├── A4.md    — WhatsApp Webhook
+        ├── A5.md    — State Machine y bugs resueltos
+        ├── A6.md    — Rama de foto + IA + idempotencia
+        ├── A7.md    — Casos borde + timeouts + reintentos
         └── A8.md    — E2E + bugs cazados en pruebas + externalización env vars
 ```
 
