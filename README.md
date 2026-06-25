@@ -155,8 +155,8 @@ cp .env.example .env
 | 2 | Usuario existente → salta registro, sube ticket directo | ✅ validado en vivo (A8) | ejec. 22187, 22325 |
 | 3 | Factura ilegible → el bot pide nueva foto | ✅ validado en vivo (A8) | ejec. 22209, 22214 |
 | 4 | Foto o factura duplicada → mensaje correcto | ✅ validado en vivo (A8) | ejec. 22200, 22397 |
-| ✅ | Timeout sin foto: recordatorio + cierre automático | ✅ validado en vivo (A8) | ejec. 22173, idle_min=47 |
-| ✅ | Límite de ilegibles → revisión manual | ✅ validado en vivo (A8) | ejec. 22219, validacion_fallida |
+| 5 | Timeout sin foto: recordatorio + cierre automático | ✅ validado en vivo (A8) | ejec. 22173, idle_min=47 |
+| 6 | Límite de ilegibles → revisión manual | ✅ validado en vivo (A8) | ejec. 22219, validacion_fallida |
 
 ---
 
