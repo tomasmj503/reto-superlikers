@@ -169,9 +169,11 @@ cp .env.example .env
 
 ---
 
-## Video Loom
+## Demo
 
-Demostración del flujo corriendo en vivo con casos reales (registro,
-foto + puntos, y casos borde):
+| | |
+|---|---|
+| **Dashboard** | https://reto-superlikers-dashboard.vercel.app/ |
+| **Video Loom** | https://www.loom.com/share/0cc0632a0fe6495cac309569be01718e |
 
-https://www.loom.com/share/0cc0632a0fe6495cac309569be01718e
+El video muestra el flujo corriendo en vivo con casos reales (registro, foto + puntos, y casos borde).
