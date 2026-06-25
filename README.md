@@ -63,6 +63,8 @@ WhatsApp Cloud API (Meta)
 ── .env.example                          — solo nombres de variables, sin valores
 ── workflows/
 │   └── superlikers_flujo_completo.json   — export del workflow n8n (v8, 62 nodos, A8c)
+── supabase/
+│   └── schema.sql                        — tablas, constraints, RLS e índice de idempotencia
 ── prompts/
 │   ── copy.json                         — copy del bot por paso (fuente de verdad)
 │   ── factura_system.txt                — system prompt para la IA de factura
@@ -149,12 +151,12 @@ cp .env.example .env
 
 | # | Caso | Estado | Evidencia |
 |---|---|---|---|
-| 1 | Usuario nuevo → registro + foto + venta + aceptación | ✓ | 52.200 pts — ejec. 22249, 22280 |
-| 2 | Usuario existente → salta registro, sube ticket directo | ✓ | ejec. 22187, 22325 |
-| 3 | Factura ilegible → el bot pide nueva foto | ✓ | ejec. 22209, 22214 |
-| 4 | Foto o factura duplicada → mensaje correcto | ✓ | ejec. 22200, 22397 |
-| ✓ | Timeout sin foto: recordatorio + cierre automático | ✓ | ejec. 22173, idle_min=47 |
-| ✓ | Límite de ilegibles → revisión manual | ✓ | ejec. 22219, validacion_fallida |
+| 1 | Usuario nuevo → registro + foto + venta + aceptación | ✅ validado en vivo (A8) | 52.200 pts — ejec. 22249, 22280 |
+| 2 | Usuario existente → salta registro, sube ticket directo | ✅ validado en vivo (A8) | ejec. 22187, 22325 |
+| 3 | Factura ilegible → el bot pide nueva foto | ✅ validado en vivo (A8) | ejec. 22209, 22214 |
+| 4 | Foto o factura duplicada → mensaje correcto | ✅ validado en vivo (A8) | ejec. 22200, 22397 |
+| ✅ | Timeout sin foto: recordatorio + cierre automático | ✅ validado en vivo (A8) | ejec. 22173, idle_min=47 |
+| ✅ | Límite de ilegibles → revisión manual | ✅ validado en vivo (A8) | ejec. 22219, validacion_fallida |
 
 ---
 
