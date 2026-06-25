@@ -1,12 +1,18 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+let _supabase: SupabaseClient | null = null;
+function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
+  return _supabase;
+}
 
 interface Transaction {
   celular: string;
@@ -93,14 +99,14 @@ export default function Dashboard() {
         csatRes,
         transRes,
       ] = await Promise.all([
-        supabase.from('transactions').select('*', { count: 'exact', head: true }),
-        supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('estado', 'completada'),
-        supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('estado', 'duplicada'),
-        supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('estado', 'error'),
-        supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('error_type', 'factura_ilegible'),
-        supabase.from('transactions').select('puntos').eq('estado', 'completada'),
-        supabase.from('transactions').select('csat').not('csat', 'is', null),
-        supabase.from('transactions').select('celular, ref_factura, puntos, estado, timestamp').order('timestamp', { ascending: false }).limit(10),
+        getSupabase().from('transactions').select('*', { count: 'exact', head: true }),
+        getSupabase().from('transactions').select('*', { count: 'exact', head: true }).eq('estado', 'completada'),
+        getSupabase().from('transactions').select('*', { count: 'exact', head: true }).eq('estado', 'duplicada'),
+        getSupabase().from('transactions').select('*', { count: 'exact', head: true }).eq('estado', 'error'),
+        getSupabase().from('transactions').select('*', { count: 'exact', head: true }).eq('error_type', 'factura_ilegible'),
+        getSupabase().from('transactions').select('puntos').eq('estado', 'completada'),
+        getSupabase().from('transactions').select('csat').not('csat', 'is', null),
+        getSupabase().from('transactions').select('celular, ref_factura, puntos, estado, timestamp').order('timestamp', { ascending: false }).limit(10),
       ]);
 
       const puntosOtorgados = (puntosRes.data || []).reduce((sum: number, r: { puntos: number }) => sum + (r.puntos || 0), 0);
